@@ -41,11 +41,24 @@ try {
         param([string]$Version, [string]$Target = 'x64-windows')
         & powershell -NoProfile -ExecutionPolicy Bypass -File $fakeRelease -ReleaseDir $releaseDir -Version $Version -Target $Target | Out-Null
     }
+    function Invoke-DoctorLog {
+        param([string]$Log)
+        $previousPreference = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        & hyperagent doctor *> $Log
+        $code = $LASTEXITCODE
+        $ErrorActionPreference = $previousPreference
+        return $code
+    }
     function Invoke-Install {
         param([string]$Log, [string]$Expected = '1.0.0')
         $env:HYPERAGENT_EXPECTED_VERSION = $Expected
+        $previousPreference = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
         & powershell -NoProfile -ExecutionPolicy Bypass -File $installScript *> $Log
-        return $LASTEXITCODE
+        $code = $LASTEXITCODE
+        $ErrorActionPreference = $previousPreference
+        return $code
     }
     function Assert-Failure {
         param([string]$Name, [string]$Log, [string]$Pattern, [scriptblock]$Command)
@@ -84,8 +97,8 @@ try {
     $parent = Get-ManifestValue -ManifestPath $manifestPath -Name 'ORCH_PARENT'
     Remove-Item -LiteralPath $parent -Recurse -Force -ErrorAction SilentlyContinue
     $doctorLog = Join-Path $work 'missing-parent.log'
-    & hyperagent doctor *> $doctorLog
-    if ($LASTEXITCODE -eq 0) { throw 'RED FAIL: missing project parent was accepted' }
+    $code = Invoke-DoctorLog $doctorLog
+    if ($code -eq 0) { throw 'RED FAIL: missing project parent was accepted' }
     $doctorText = Get-Content -LiteralPath $doctorLog -Raw
     if ($doctorText -notlike '*project parent missing*') { throw 'RED FAIL: no missing parent message' }
     Write-Host 'RED PASS: missing project parent fails doctor'
@@ -95,8 +108,8 @@ try {
     if ($code -ne 0) { throw 'RED FAIL: valid install failed' }
     Remove-Item -LiteralPath (Join-Path $installRoot 'current\.mcp.json') -Force
     $doctorLog = Join-Path $work 'missing-resource.log'
-    & hyperagent doctor *> $doctorLog
-    if ($LASTEXITCODE -eq 0) { throw 'RED FAIL: missing resource was accepted' }
+    $code = Invoke-DoctorLog $doctorLog
+    if ($code -eq 0) { throw 'RED FAIL: missing resource was accepted' }
     $doctorText = Get-Content -LiteralPath $doctorLog -Raw
     if ($doctorText -notlike '*missing .mcp.json*') { throw 'RED FAIL: no missing resource message' }
     Write-Host 'RED PASS: missing shipped resource fails doctor'
@@ -107,8 +120,8 @@ try {
     & claude mcp remove hyperagent -s user | Out-Null
     & claude mcp add -s user hyperagent -- (Join-Path $binDir 'hyperagent.cmd') mcp | Out-Null
     $doctorLog = Join-Path $work 'stale-mcp.log'
-    & hyperagent doctor *> $doctorLog
-    if ($LASTEXITCODE -eq 0) { throw 'RED FAIL: stale MCP registration was accepted' }
+    $code = Invoke-DoctorLog $doctorLog
+    if ($code -eq 0) { throw 'RED FAIL: stale MCP registration was accepted' }
     $doctorText = Get-Content -LiteralPath $doctorLog -Raw
     if ($doctorText -notlike '*stale MCP registration*') { throw 'RED FAIL: no stale MCP message' }
     Write-Host 'RED PASS: stale MCP registration fails doctor'
@@ -119,8 +132,8 @@ try {
     $port = Get-ManifestValue -ManifestPath $manifestPath -Name 'ORCH_PORT'
     $holder = Start-PortHolder -Port ([int]$port) -Log (Join-Path $work 'collision-holder.log') -ToolsDir $toolsDir
     $doctorLog = Join-Path $work 'port-collision.log'
-    & hyperagent doctor *> $doctorLog
-    if ($LASTEXITCODE -eq 0) { throw 'RED FAIL: port collision was accepted' }
+    $code = Invoke-DoctorLog $doctorLog
+    if ($code -eq 0) { throw 'RED FAIL: port collision was accepted' }
     $doctorText = Get-Content -LiteralPath $doctorLog -Raw
     if ($doctorText -notlike "*port $port is occupied*") { throw 'RED FAIL: no port collision message' }
     if ($holder) { Stop-PidById $holder.Id; $holder = $null }

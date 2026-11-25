@@ -33,9 +33,27 @@ try {
     $env:HYPERAGENT_TEMPLATES = $templateDir
     $holder = Start-PortHolder -Port 8787 -Log (Join-Path $work 'holder.log') -ToolsDir $toolsDir
     $installScript = Join-Path $repoDir 'install.ps1'
+    function Invoke-InstallScript {
+        param([string]$Log)
+        $previousPreference = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        & powershell -NoProfile -ExecutionPolicy Bypass -File $installScript *> $Log
+        $code = $LASTEXITCODE
+        $ErrorActionPreference = $previousPreference
+        return $code
+    }
+    function Invoke-DoctorLog {
+        param([string]$Log)
+        $previousPreference = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        & hyperagent doctor *> $Log
+        $code = $LASTEXITCODE
+        $ErrorActionPreference = $previousPreference
+        return $code
+    }
     $install1 = Join-Path $work 'install1.log'
-    & powershell -NoProfile -ExecutionPolicy Bypass -File $installScript *> $install1
-    if ($LASTEXITCODE -ne 0) { throw 'FAIL: install.ps1 failed' }
+    $code = Invoke-InstallScript $install1
+    if ($code -ne 0) { throw 'FAIL: install.ps1 failed' }
     $install1Text = Get-Content -LiteralPath $install1 -Raw
     if ($install1Text -notlike '*DOCTOR PASS*') { throw 'FAIL: doctor report missing' }
     if ($install1Text -notlike '*Restart Claude Code*') { throw 'FAIL: restart note missing' }
@@ -60,8 +78,8 @@ try {
     & powershell -NoProfile -ExecutionPolicy Bypass -File $fakeRelease -ReleaseDir $releaseDir -Version '2.0.0' | Out-Null
     $env:HYPERAGENT_EXPECTED_VERSION = '2.0.0'
     $install2 = Join-Path $work 'install2.log'
-    & powershell -NoProfile -ExecutionPolicy Bypass -File $installScript *> $install2
-    if ($LASTEXITCODE -ne 0) { throw 'FAIL: second install failed' }
+    $code = Invoke-InstallScript $install2
+    if ($code -ne 0) { throw 'FAIL: second install failed' }
     $versionOutput = (& hyperagent --version | Out-String).Trim()
     if ($versionOutput -ne '2.0.0') { throw 'FAIL: version after update' }
     $versionCount = (Get-ChildItem -LiteralPath (Join-Path $installRoot 'versions') -Directory).Count
@@ -69,8 +87,8 @@ try {
     & powershell -NoProfile -ExecutionPolicy Bypass -File $fakeRelease -ReleaseDir $releaseDir -Version '3.0.0' | Out-Null
     $env:HYPERAGENT_EXPECTED_VERSION = '3.0.0'
     $install3 = Join-Path $work 'install3.log'
-    & powershell -NoProfile -ExecutionPolicy Bypass -File $installScript *> $install3
-    if ($LASTEXITCODE -ne 0) { throw 'FAIL: third install failed' }
+    $code = Invoke-InstallScript $install3
+    if ($code -ne 0) { throw 'FAIL: third install failed' }
     $versionOutput = (& hyperagent --version | Out-String).Trim()
     if ($versionOutput -ne '3.0.0') { throw 'FAIL: version after prune' }
     $versionCount = (Get-ChildItem -LiteralPath (Join-Path $installRoot 'versions') -Directory).Count
@@ -80,13 +98,13 @@ try {
     cmd /c rmdir /s /q "$homeDir" 2>$null
     foreach ($directory in @($homeDir, $localAppData, $appData, $tempDir)) { New-Item -ItemType Directory -Force -Path $directory | Out-Null }
     $installClean = Join-Path $work 'install-clean.log'
-    & powershell -NoProfile -ExecutionPolicy Bypass -File $installScript *> $installClean
-    if ($LASTEXITCODE -ne 0) { throw 'FAIL: clean reinstall failed' }
+    $code = Invoke-InstallScript $installClean
+    if ($code -ne 0) { throw 'FAIL: clean reinstall failed' }
     $versionOutput = (& hyperagent --version | Out-String).Trim()
     if ($versionOutput -ne $expectedVersion) { throw 'FAIL: version after clean reinstall' }
     $doctorClean = Join-Path $work 'doctor-clean.log'
-    & hyperagent doctor *> $doctorClean
-    if ($LASTEXITCODE -ne 0) { throw 'FAIL: clean doctor failed' }
+    $code = Invoke-DoctorLog $doctorClean
+    if ($code -ne 0) { throw 'FAIL: clean doctor failed' }
     $doctorText = Get-Content -LiteralPath $doctorClean -Raw
     if ($doctorText -notlike '*DOCTOR PASS*') { throw 'FAIL: clean doctor report missing' }
     Assert-McpEnv -EnvPath $envPath
