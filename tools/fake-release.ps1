@@ -9,7 +9,7 @@ $staging = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName())
 New-Item -ItemType Directory -Force -Path $staging | Out-Null
 try {
     $layout = Join-Path $staging "hyperagent-$Target"
-    foreach ($directory in @('bin', 'share\ccbridge\templates', 'share\ccbridge\web', 'share\hyperagent\gui\public', 'share\hyperagent\scripts', 'share\hyperagent\docs', 'share\hyperagent\tools')) {
+    foreach ($directory in @('bin', 'share\ccbridge\templates', 'share\ccbridge\web', 'share\hyperagent\gui\public', 'share\hyperagent\tools', 'scripts', 'docs', 'tools')) {
         New-Item -ItemType Directory -Force -Path (Join-Path $layout $directory) | Out-Null
     }
     $toolsDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -23,8 +23,9 @@ try {
     [IO.File]::WriteAllText((Join-Path $layout 'share\ccbridge\web\index.html'), '<html></html>')
     [IO.File]::WriteAllText((Join-Path $layout 'share\hyperagent\gui\public\index.html'), '<html></html>')
     [IO.File]::WriteAllText((Join-Path $layout '.mcp.json'), '{"mcpServers":{"hyperagent":{"command":"build/hyperagent","args":["mcp"]}}}')
-    [IO.File]::WriteAllText((Join-Path $layout 'share\hyperagent\scripts\placeholder'), 'placeholder')
-    [IO.File]::WriteAllText((Join-Path $layout 'share\hyperagent\docs\placeholder'), 'placeholder')
+    [IO.File]::WriteAllText((Join-Path $layout 'scripts\placeholder'), 'placeholder')
+    [IO.File]::WriteAllText((Join-Path $layout 'docs\placeholder'), 'placeholder')
+    [IO.File]::WriteAllText((Join-Path $layout 'tools\placeholder'), 'placeholder')
     [IO.File]::WriteAllText((Join-Path $layout 'share\ccbridge\templates\claude.json'), '{"default": true, "argv": ["chlaude-peer", "--model", "default"], "ready": ["Claude Code"], "busy": ["esc to interrupt"], "transcript": {"kind": "claude-jsonl", "root": "{home}/.claude/projects"}}')
     Compress-Archive -Path $layout -DestinationPath (Join-Path $ReleaseDir $archive)
     $hash = (Get-FileHash -Algorithm SHA256 (Join-Path $ReleaseDir $archive)).Hash.ToLowerInvariant()
