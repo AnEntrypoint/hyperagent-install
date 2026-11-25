@@ -26,7 +26,7 @@ try {
     New-Template $templateDir
     function Reset-Home {
         Clear-SetupEnv
-        cmd /c rmdir /s /q "$homeDir" 2>$null
+        if (Test-Path $homeDir) { cmd /c rmdir /s /q "$homeDir" 2>$null }
         foreach ($directory in @($homeDir, $localAppData, $appData, $tempDir)) { New-Item -ItemType Directory -Force -Path $directory | Out-Null }
         $env:USERPROFILE = $homeDir
         $env:HOME = $homeDir
