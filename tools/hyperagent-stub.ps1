@@ -111,8 +111,7 @@ function Run-Doctor {
     $templateFile = Join-Path $templates 'claude.json'
     if (Test-Path $templateFile) {
         $template = Get-Content -LiteralPath $templateFile -Raw
-        if ($template -notlike "*$modelFlag*" -or $template -notlike '*default*') { Write-Host 'doctor: template has no model default'; exit 1 }
-        if ($template -match "AIRC_CLAUDE_MODEL|ORCH_CLAUDE_MODEL|ANTHROPIC_MODEL|$modelConflict") { Write-Host 'doctor: conflicting model override'; exit 1 }
+        if ($template -match "AIRC_CLAUDE_MODEL|ORCH_CLAUDE_MODEL|ANTHROPIC_MODEL|$modelFlag") { Write-Host 'doctor: conflicting model override'; exit 1 }
     }
     $claude = Get-Command claude -ErrorAction SilentlyContinue
     if (-not $claude) { Write-Host 'doctor: claude CLI not found on PATH'; exit 1 }

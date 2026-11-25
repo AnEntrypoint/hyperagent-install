@@ -45,7 +45,7 @@ stop_pid() {
 make_template() {
   template_dir=$1
   mkdir -p "$template_dir"
-  printf '%s\n' '{"default": true, "argv": ["chlaude-peer", "--model", "default"], "ready": ["Claude Code"], "busy": ["esc to interrupt"], "transcript": {"kind": "claude-jsonl", "root": "{home}/.claude/projects"}}' > "$template_dir/claude.json"
+  printf '%s\n' '{"default": true, "argv": ["chlaude-peer"], "ready": ["Claude Code"], "busy": ["esc to interrupt"], "transcript": {"kind": "claude-jsonl", "root": "{home}/.claude/projects"}}' > "$template_dir/claude.json"
 }
 
 check_mcp_env() {

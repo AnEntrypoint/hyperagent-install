@@ -115,8 +115,6 @@ run_doctor() {
   done
   template_file="$templates/claude.json"
   if [ -f "$template_file" ]; then
-    grep -q -- "$model_flag" "$template_file" || { echo "doctor: template has no model default" >&2; exit 1; }
-    grep -q -- default "$template_file" || { echo "doctor: template has no model default" >&2; exit 1; }
     if grep -Eq -- "AIRC_CLAUDE_MODEL|ORCH_CLAUDE_MODEL|ANTHROPIC_MODEL|$model_conflict" "$template_file"; then
       echo "doctor: conflicting model override" >&2
       exit 1

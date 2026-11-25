@@ -26,7 +26,7 @@ try {
     [IO.File]::WriteAllText((Join-Path $layout 'scripts\placeholder'), 'placeholder')
     [IO.File]::WriteAllText((Join-Path $layout 'docs\placeholder'), 'placeholder')
     [IO.File]::WriteAllText((Join-Path $layout 'tools\placeholder'), 'placeholder')
-    [IO.File]::WriteAllText((Join-Path $layout 'share\ccbridge\templates\claude.json'), '{"default": true, "argv": ["chlaude-peer", "--model", "default"], "ready": ["Claude Code"], "busy": ["esc to interrupt"], "transcript": {"kind": "claude-jsonl", "root": "{home}/.claude/projects"}}')
+    [IO.File]::WriteAllText((Join-Path $layout 'share\ccbridge\templates\claude.json'), '{"default": true, "argv": ["chlaude-peer"], "ready": ["Claude Code"], "busy": ["esc to interrupt"], "transcript": {"kind": "claude-jsonl", "root": "{home}/.claude/projects"}}')
     Compress-Archive -Path $layout -DestinationPath (Join-Path $ReleaseDir $archive)
     $hash = (Get-FileHash -Algorithm SHA256 (Join-Path $ReleaseDir $archive)).Hash.ToLowerInvariant()
     [IO.File]::WriteAllText((Join-Path $ReleaseDir 'SHA256SUMS'), "$hash  $archive" + [Environment]::NewLine)

@@ -40,7 +40,7 @@ Restart Claude Code after installation. An already-running session keeps its old
 
 ## Custom chlaude-compatible peers
 
-Put a claude.json harness template in a directory and set HYPERAGENT_TEMPLATES to that directory before installation. The template argv should name your own chlaude-compatible wrapper and append --model default. The wrapper reads the host chlaude export lines itself; keep its credentials out of the template, repository, logs and reports. Do not set AIRC_CLAUDE_MODEL, ORCH_CLAUDE_MODEL or another model override: hyperagent then appends no conflicting --model.
+Put a claude.json harness template in a directory and set HYPERAGENT_TEMPLATES to that directory before installation. The template argv should name your own chlaude-compatible wrapper and contain no --model flag. The wrapper reads the host chlaude export lines itself; keep its credentials out of the template, repository, logs and reports. The peer launch uses --model default, and unset AIRC_CLAUDE_MODEL and ORCH_CLAUDE_MODEL leave no conflicting --model appended by hyperagent.
 
 After setup, doctor checks the persisted MCP environment, the project parent, the chosen port, the shipped resources and the absence of a conflicting model override. Restart Claude Code before using the peers.
 

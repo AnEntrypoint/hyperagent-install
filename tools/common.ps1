@@ -39,7 +39,7 @@ function Stop-PidById {
 function New-Template {
     param([string]$TemplateDir)
     New-Item -ItemType Directory -Force -Path $TemplateDir | Out-Null
-    $json = '{"default": true, "argv": ["chlaude-peer", "--model", "default"], "ready": ["Claude Code"], "busy": ["esc to interrupt"], "transcript": {"kind": "claude-jsonl", "root": "{home}/.claude/projects"}}'
+    $json = '{"default": true, "argv": ["chlaude-peer"], "ready": ["Claude Code"], "busy": ["esc to interrupt"], "transcript": {"kind": "claude-jsonl", "root": "{home}/.claude/projects"}}'
     [IO.File]::WriteAllText((Join-Path $TemplateDir 'claude.json'), $json)
 }
 

@@ -29,7 +29,7 @@ printf '%s\n' '{"mcpServers":{"hyperagent":{"command":"build/hyperagent","args":
 printf '%s\n' 'placeholder' > "$layout/scripts/placeholder"
 printf '%s\n' 'placeholder' > "$layout/docs/placeholder"
 printf '%s\n' 'placeholder' > "$layout/tools/placeholder"
-printf '%s\n' '{"default": true, "argv": ["chlaude-peer", "--model", "default"], "ready": ["Claude Code"], "busy": ["esc to interrupt"], "transcript": {"kind": "claude-jsonl", "root": "{home}/.claude/projects"}}' > "$layout/share/ccbridge/templates/claude.json"
+printf '%s\n' '{"default": true, "argv": ["chlaude-peer"], "ready": ["Claude Code"], "busy": ["esc to interrupt"], "transcript": {"kind": "claude-jsonl", "root": "{home}/.claude/projects"}}' > "$layout/share/ccbridge/templates/claude.json"
 tar -C "$staging" -czf "$release_dir/$archive" "hyperagent-$target"
 python3 -I -c 'import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest(), sys.argv[2])' "$release_dir/$archive" "$archive" > "$release_dir/SHA256SUMS"
 echo "$archive"
