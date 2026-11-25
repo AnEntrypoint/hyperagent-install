@@ -32,7 +32,8 @@ try {
         $env:APPDATA = $appData
         $env:TEMP = $tempDir
         $env:TMP = $tempDir
-        $env:PATH = "$binDir;$ToolsDir;$env:PATH"
+        $env:PATH = "$binDir;$env:PATH"
+        Set-TestPath $ToolsDir
     }
     function New-Release {
         param([string]$Version, [string]$Target = 'x64-windows')

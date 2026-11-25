@@ -14,13 +14,13 @@ $modelDefault = $modelFlag + ' default'
 $tokenPrefix = 'sk-ant' + '-'
 $authAssignment = 'ANTHROPIC_AUTH' + '_TOKEN='
 foreach ($pattern in $badPaths) {
-    $hits = $scanFiles | Select-String -SimpleMatch -Pattern $pattern
+    $hits = Select-String -Path $scanFiles.FullName -SimpleMatch -Pattern $pattern
     if ($hits) { throw "POWERSHELL SYNTAX FAIL: hardcoded host path $pattern" }
 }
-$modelHits = $scanFiles | Select-String -SimpleMatch -Pattern $modelFlag | Where-Object { $_.Line -notlike "*$modelDefault*" }
+$modelHits = Select-String -Path $scanFiles.FullName -SimpleMatch -Pattern $modelFlag | Where-Object { $_.Line -notlike "*$modelDefault*" }
 if ($modelHits) { throw 'POWERSHELL SYNTAX FAIL: conflicting model override' }
-$tokenHits = $scanFiles | Select-String -SimpleMatch -Pattern $tokenPrefix
+$tokenHits = Select-String -Path $scanFiles.FullName -SimpleMatch -Pattern $tokenPrefix
 if ($tokenHits) { throw 'POWERSHELL SYNTAX FAIL: credential token in repository' }
-$authHits = $scanFiles | Select-String -SimpleMatch -Pattern $authAssignment
+$authHits = Select-String -Path $scanFiles.FullName -SimpleMatch -Pattern $authAssignment
 if ($authHits) { throw 'POWERSHELL SYNTAX FAIL: credential assignment in repository' }
 Write-Host 'POWERSHELL SYNTAX PASS: parser, portability and model checks'
