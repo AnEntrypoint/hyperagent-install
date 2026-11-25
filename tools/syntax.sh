@@ -2,9 +2,9 @@
 set -eu
 tools_dir=$(cd "$(dirname "$0")" && pwd)
 repo_dir=$(CDPATH= cd -- "$tools_dir/.." && pwd)
-sh -n "$repo_dir/install.sh" "$tools_dir"/*.sh
+sh -n "$repo_dir/install.sh" "$tools_dir"/*.sh "$tools_dir/claude"
 if command -v bash >/dev/null 2>&1; then
-  bash -n "$repo_dir/install.sh" "$tools_dir"/*.sh
+  bash -n "$repo_dir/install.sh" "$tools_dir"/*.sh "$tools_dir/claude"
 fi
 node --check "$tools_dir/mcp-stub.js"
 bad_paths=$(printf '%s|%s|%s|%s' '/work''space' '/config/work''space' '/data/work''space' '/''tmp')

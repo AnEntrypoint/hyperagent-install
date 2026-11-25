@@ -65,3 +65,36 @@ function Assert-Connected {
     $mcpList = (& claude mcp list 2>&1 | Out-String)
     if ($mcpList -notlike '*Connected*') { throw "FAIL: MCP registration not connected`n$mcpList" }
 }
+function Set-TestPath {
+    param([string]$ToolsDir)
+    if ($env:HYPERAGENT_REAL_CLAUDE -ne '1') {
+        $env:PATH = "$ToolsDir;$env:PATH"
+    }
+}
+
+function Test-PortFree {
+    param([int]$Port)
+    $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $Port)
+    try {
+        $listener.Start()
+        return $true
+    } catch {
+        return $false
+    } finally {
+        $listener.Stop()
+    }
+}
+
+function Start-PortHolder {
+    param([int]$Port = 8787, [string]$Log, [string]$ToolsDir)
+    if (-not (Test-PortFree $Port)) { return $null }
+    $holder = Join-Path $ToolsDir 'hold-port.ps1'
+    $arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$holder`" -Port $Port -Log `"$Log`""
+    $process = Start-Process -FilePath 'powershell' -ArgumentList $arguments -PassThru -WindowStyle Hidden
+    for ($i = 0; $i -lt 40; $i++) {
+        if ((Test-Path $Log) -and ((Get-Content -LiteralPath $Log -Raw) -eq 'ready')) { break }
+        Start-Sleep -Milliseconds 100
+    }
+    if (-not ((Test-Path $Log) -and ((Get-Content -LiteralPath $Log -Raw) -eq 'ready'))) { throw 'FAIL: port holder did not start' }
+    return $process
+}

@@ -69,3 +69,9 @@ assert_connected() {
     *) echo "FAIL: MCP registration not connected" >&2; echo "$mcp_list" >&2; return 1 ;;
   esac
 }
+set_test_path() {
+  if [ "${HYPERAGENT_REAL_CLAUDE:-0}" != "1" ]; then
+    PATH="$tools_common_dir:$PATH"
+    export PATH
+  fi
+}

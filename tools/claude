@@ -1,0 +1,40 @@
+#!/bin/sh
+set -eu
+config="$HOME/.claude.json"
+command_name=${1:-}
+subcommand=${2:-}
+shift 2 || true
+case "$command_name $subcommand" in
+  "mcp add")
+    : > "$config"
+    command_line=""
+    while [ "$#" -gt 0 ]; do
+      case "$1" in
+        -e) printf '%s\n' "$2" >> "$config"; shift 2 ;;
+        --) shift; command_line="$*"; break ;;
+        *) shift ;;
+      esac
+    done
+    printf 'COMMAND=%s\n' "$command_line" >> "$config"
+    echo "Added stdio MCP server hyperagent with command: $command_line to user config"
+    ;;
+  "mcp get")
+    [ -f "$config" ] || { echo "No MCP server hyperagent found" >&2; exit 1; }
+    echo "hyperagent:"
+    echo "  Scope: User config"
+    echo "  Status: ✔ Connected"
+    echo "  Environment:"
+    while IFS= read -r line; do
+      case "$line" in COMMAND=*) ;; *) echo "    $line" ;; esac
+    done < "$config"
+    ;;
+  "mcp list")
+    [ -f "$config" ] || { echo "hyperagent: - ✘ Failed to connect" >&2; exit 1; }
+    echo "hyperagent: - ✔ Connected"
+    ;;
+  "mcp remove")
+    rm -f "$config"
+    echo "Removed MCP server hyperagent from user config"
+    ;;
+  *) echo "claude stub: unsupported command" >&2; exit 2 ;;
+esac
