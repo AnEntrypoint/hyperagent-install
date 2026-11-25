@@ -3,7 +3,9 @@ function New-WorkDir {
         $work = $env:HYPERAGENT_WITNESS_DIR
         if (Test-Path $work) { cmd /c rmdir /s /q "$work" 2>$null }
     } else {
-        $work = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName())
+        $scratchRoot = if ($env:HYPERAGENT_SCRATCH) { Join-Path $env:HYPERAGENT_SCRATCH 'hyperagent-install' } else { Join-Path $env:LOCALAPPDATA 'hyperagent-install-witness' }
+        New-Item -ItemType Directory -Force -Path $scratchRoot | Out-Null
+        $work = Join-Path $scratchRoot ([IO.Path]::GetRandomFileName())
     }
     New-Item -ItemType Directory -Force -Path $work | Out-Null
     return $work
@@ -102,4 +104,28 @@ function Clear-SetupEnv {
     foreach ($name in @('ORCH_HOME', 'ORCH_PARENT', 'ORCH_PORT', 'ORCH_JOURNAL', 'HYPERAGENT_ROOT', 'CCBRIDGE_TEMPLATES', 'MCP_TIMEOUT', 'MCP_TOOL_TIMEOUT', 'HYPERAGENT_REQUIRE_DEFAULT_PORT', 'ORCH_CLAUDE_MODEL', 'AIRC_CLAUDE_MODEL')) {
         Remove-Item Env:$name -ErrorAction SilentlyContinue
     }
+}
+
+function New-PartialRelease {
+    param([string]$ReleaseDir)
+    $manifestPath = Join-Path $ReleaseDir 'manifest.json'
+    $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+    $manifest.targets.PSObject.Properties.Remove('x64-macos')
+    [IO.File]::WriteAllText($manifestPath, ($manifest | ConvertTo-Json -Depth 5))
+    $lines = @()
+    foreach ($line in Get-Content -LiteralPath (Join-Path $ReleaseDir 'SHA256SUMS')) {
+        $parts = $line -split '\s+'
+        if ($parts.Count -ge 2 -and $parts[1] -notlike '*x64-macos*') { $lines += $line }
+    }
+    [IO.File]::WriteAllText((Join-Path $ReleaseDir 'SHA256SUMS'), ($lines -join [Environment]::NewLine) + [Environment]::NewLine)
+}
+
+function New-MissingChecksumRelease {
+    param([string]$ReleaseDir)
+    $lines = @()
+    foreach ($line in Get-Content -LiteralPath (Join-Path $ReleaseDir 'SHA256SUMS')) {
+        $parts = $line -split '\s+'
+        if ($parts.Count -ge 2 -and $parts[1] -ne 'hyperagent-x64-macos.tar.gz') { $lines += $line }
+    }
+    [IO.File]::WriteAllText((Join-Path $ReleaseDir 'SHA256SUMS'), ($lines -join [Environment]::NewLine) + [Environment]::NewLine)
 }

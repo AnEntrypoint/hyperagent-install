@@ -6,7 +6,9 @@ work_dir() {
     rm -rf "$work"
     mkdir -p "$work"
   else
-    work=$(mktemp -d)
+    scratch_root=${HYPERAGENT_SCRATCH:-${XDG_DATA_HOME:-$HOME/.local/share}/hyperagent-scratch}
+    mkdir -p "$scratch_root/hyperagent-install"
+    work=$(mktemp -d "$scratch_root/hyperagent-install/witness.XXXXXX")
   fi
   echo "$work"
 }
@@ -83,4 +85,34 @@ data_home() {
     Darwin) echo "$HOME/Library/Application Support" ;;
     *) echo "${XDG_DATA_HOME:-$HOME/.local/share}" ;;
   esac
+}
+
+make_partial_release() {
+  python3 -I -c '
+import json,sys
+release_dir = sys.argv[1]
+path = release_dir + "/manifest.json"
+manifest = json.load(open(path))
+manifest["targets"].pop("x64-macos", None)
+open(path, "w").write(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+lines = []
+for line in open(release_dir + "/SHA256SUMS"):
+    parts = line.split()
+    if len(parts) >= 2 and "x64-macos" not in parts[1]:
+        lines.append(line.rstrip("\n"))
+open(release_dir + "/SHA256SUMS", "w").write("\n".join(lines) + "\n")
+' "$1"
+}
+
+make_missing_checksum_release() {
+  python3 -I -c '
+import sys
+release_dir = sys.argv[1]
+lines = []
+for line in open(release_dir + "/SHA256SUMS"):
+    parts = line.split()
+    if len(parts) >= 2 and parts[1] != "hyperagent-x64-macos.tar.gz":
+        lines.append(line.rstrip("\n"))
+open(release_dir + "/SHA256SUMS", "w").write("\n".join(lines) + "\n")
+' "$1"
 }
