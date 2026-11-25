@@ -1,36 +1,71 @@
 #!/bin/sh
 set -eu
 tools_dir=$(cd "$(dirname "$0")" && pwd)
-work=${HYPERAGENT_WITNESS_DIR:-/workspace/tmp/hyperagent-release/witness}
-release_dir="$work/fake-latest"
+. "$tools_dir/common.sh"
+work=$(work_dir)
+server_pid=""
+port_holder_pid=""
+cleanup() {
+  stop_pid "$server_pid"
+  stop_pid "$port_holder_pid"
+  rm -rf "$work"
+}
+trap 'cleanup' EXIT
 home_dir="$work/home"
-rm -rf "$work"
-mkdir -p "$work" "$home_dir"
-
-"$tools_dir/fake-release.sh" "$release_dir" 1.0.0 > /dev/null
-read -r server_pid port <<EOF
-$("$tools_dir/serve.sh" "$release_dir" "$work/server.log")
-EOF
-trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+release_dir="$work/fake-latest"
+template_dir="$work/templates"
+expected_version=${HYPERAGENT_EXPECTED_VERSION:-1.0.0}
+source_sha=${HYPERAGENT_SOURCE_SHA:-witness-sha}
+mkdir -p "$home_dir"
+make_template "$template_dir"
+HYPERAGENT_SOURCE_SHA="$source_sha" "$tools_dir/fake-release.sh" "$release_dir" "$expected_version" > /dev/null
+start_server "$release_dir" "$work/server.log"
+port_holder_pid=$(hold_default_port "$work/holder.log")
 export HOME="$home_dir"
-export HYPERAGENT_RELEASE_BASE="http://127.0.0.1:$port"
-export PATH="$home_dir/.local/bin:$PATH"
 export XDG_DATA_HOME="$home_dir/.local/share"
-
-sh "$tools_dir/../install.sh"
-[ "$(hyperagent --version)" = "hyperagent 1.0.0" ] || { echo "FAIL: version after first install"; exit 1; }
+export PATH="$home_dir/.local/bin:$PATH"
+export HYPERAGENT_RELEASE_BASE="http://127.0.0.1:$server_port"
+export HYPERAGENT_EXPECTED_VERSION="$expected_version"
+export HYPERAGENT_TEMPLATES="$template_dir"
+export TMPDIR="$work"
+sh "$tools_dir/../install.sh" > "$work/install1.log" 2>&1
+grep -q "DOCTOR PASS" "$work/install1.log" || { echo "FAIL: doctor report missing"; cat "$work/install1.log"; exit 1; }
+grep -q "Restart Claude Code" "$work/install1.log" || { echo "FAIL: restart note missing"; cat "$work/install1.log"; exit 1; }
+[ "$(hyperagent --version)" = "$expected_version" ] || { echo "FAIL: version after install"; exit 1; }
 [ -L "$home_dir/.local/bin/hyperagent" ] || { echo "FAIL: link missing"; exit 1; }
-[ "$(ls "$XDG_DATA_HOME/hyperagent/versions" | wc -l)" -eq 1 ] || { echo "FAIL: expected one version"; exit 1; }
-
-sleep 1
-"$tools_dir/fake-release.sh" "$release_dir" 2.0.0 > /dev/null
-sh "$tools_dir/../install.sh"
-[ "$(hyperagent --version)" = "hyperagent 2.0.0" ] || { echo "FAIL: version after update"; exit 1; }
-[ "$(ls "$XDG_DATA_HOME/hyperagent/versions" | wc -l)" -eq 2 ] || { echo "FAIL: previous version not kept"; exit 1; }
-
-sleep 1
-"$tools_dir/fake-release.sh" "$release_dir" 3.0.0 > /dev/null
-sh "$tools_dir/../install.sh"
-[ "$(ls "$XDG_DATA_HOME/hyperagent/versions" | wc -l)" -eq 2 ] || { echo "FAIL: older versions not pruned"; exit 1; }
-
-echo "WITNESS PASS: installed, linked, version answered, setup ran, update kept the previous version"
+manifest="$XDG_DATA_HOME/hyperagent/.orch/install-manifest.json"
+env_file="$XDG_DATA_HOME/hyperagent/.orch/install-manifest.env"
+port=$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1]))["ORCH_PORT"])' "$manifest")
+parent=$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1]))["ORCH_PARENT"])' "$manifest")
+[ "$port" != "8787" ] || { echo "FAIL: no port fallback"; exit 1; }
+[ -d "$parent" ] || { echo "FAIL: project parent missing"; exit 1; }
+grep -F "$template_dir" "$env_file" > /dev/null || { echo "FAIL: custom template not persisted"; exit 1; }
+check_mcp_env "$home_dir" "$env_file"
+assert_connected "$home_dir"
+stop_pid "$port_holder_pid"
+port_holder_pid=""
+HYPERAGENT_SOURCE_SHA="$source_sha" "$tools_dir/fake-release.sh" "$release_dir" 2.0.0 > /dev/null
+HYPERAGENT_EXPECTED_VERSION=2.0.0 sh "$tools_dir/../install.sh" > "$work/install2.log" 2>&1
+[ "$(hyperagent --version)" = "2.0.0" ] || { echo "FAIL: version after update"; exit 1; }
+version_count=$(ls "$XDG_DATA_HOME/hyperagent/versions" | wc -l | tr -d ' ')
+[ "$version_count" -eq 2 ] || { echo "FAIL: previous version not kept"; exit 1; }
+HYPERAGENT_SOURCE_SHA="$source_sha" "$tools_dir/fake-release.sh" "$release_dir" 3.0.0 > /dev/null
+HYPERAGENT_EXPECTED_VERSION=3.0.0 sh "$tools_dir/../install.sh" > "$work/install3.log" 2>&1
+[ "$(hyperagent --version)" = "3.0.0" ] || { echo "FAIL: version after prune"; exit 1; }
+version_count=$(ls "$XDG_DATA_HOME/hyperagent/versions" | wc -l | tr -d ' ')
+[ "$version_count" -eq 2 ] || { echo "FAIL: older versions not pruned"; exit 1; }
+HYPERAGENT_SOURCE_SHA="$source_sha" "$tools_dir/fake-release.sh" "$release_dir" "$expected_version" > /dev/null
+rm -rf "$home_dir"
+mkdir -p "$home_dir"
+HYPERAGENT_EXPECTED_VERSION="$expected_version" sh "$tools_dir/../install.sh" > "$work/install-clean.log" 2>&1
+[ "$(hyperagent --version)" = "$expected_version" ] || { echo "FAIL: version after clean reinstall"; exit 1; }
+hyperagent doctor > "$work/doctor-clean.log" 2>&1
+grep -q "DOCTOR PASS" "$work/doctor-clean.log" || { echo "FAIL: clean doctor"; cat "$work/doctor-clean.log"; exit 1; }
+check_mcp_env "$home_dir" "$env_file"
+assert_connected "$home_dir"
+if grep -Eiq 'warning|failed|error' "$work"/install*.log; then
+  echo "FAIL: unexpected warning, failure or error in install logs" >&2
+  grep -Ein 'warning|failed|error' "$work"/install*.log >&2
+  exit 1
+fi
+printf 'WITNESS PASS: %s %s install, doctor, port fallback, MCP env, connected, update, pruning, clean reinstall\n' "$expected_version" "$source_sha"
