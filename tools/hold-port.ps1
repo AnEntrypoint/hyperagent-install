@@ -1,5 +1,5 @@
-$ErrorActionPreference = 'Stop'
 param([int]$Port = 8787, [string]$Log)
+$ErrorActionPreference = 'Stop'
 
 $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $Port)
 try {

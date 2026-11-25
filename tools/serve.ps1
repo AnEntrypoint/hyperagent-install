@@ -1,5 +1,5 @@
-$ErrorActionPreference = 'Stop'
 param([string]$ReleaseDir, [int]$Port, [string]$Log)
+$ErrorActionPreference = 'Stop'
 
 $listener = [System.Net.HttpListener]::new()
 $listener.Prefixes.Add("http://127.0.0.1:$Port/")

@@ -34,6 +34,7 @@ valid_release
 start_server "$release_dir" "$work/server.log"
 export HOME="$home_dir"
 export XDG_DATA_HOME="$home_dir/.local/share"
+data_root="$(data_home)/hyperagent"
 export PATH="$home_dir/.local/bin:$PATH"
 export HYPERAGENT_RELEASE_BASE="http://127.0.0.1:$server_port"
 export HYPERAGENT_TEMPLATES="$template_dir"
@@ -46,7 +47,7 @@ if HYPERAGENT_EXPECTED_VERSION=1.0.0 sh "$tools_dir/../install.sh" > "$work/bad-
   exit 1
 fi
 grep -q "sha256 mismatch" "$work/bad-checksum.log" || { echo "RED FAIL: no mismatch message"; cat "$work/bad-checksum.log"; exit 1; }
-[ ! -e "$XDG_DATA_HOME/hyperagent" ] && [ ! -e "$home_dir/.local/bin/hyperagent" ] || { echo "RED FAIL: something was installed"; exit 1; }
+[ ! -e "$data_root" ] && [ ! -e "$home_dir/.local/bin/hyperagent" ] || { echo "RED FAIL: something was installed"; exit 1; }
 echo "RED PASS: corrupted archive refused and nothing installed"
 fresh_home
 HYPERAGENT_SOURCE_SHA="$source_sha" "$tools_dir/fake-release.sh" "$release_dir" 1.0.0 arm64-windows > /dev/null
@@ -55,7 +56,7 @@ if HYPERAGENT_EXPECTED_VERSION=1.0.0 sh "$tools_dir/../install.sh" > "$work/wron
   exit 1
 fi
 grep -q "SHA256SUMS has no entry" "$work/wrong-target.log" || { echo "RED FAIL: no wrong artifact message"; cat "$work/wrong-target.log"; exit 1; }
-[ ! -e "$XDG_DATA_HOME/hyperagent" ] && [ ! -e "$home_dir/.local/bin/hyperagent" ] || { echo "RED FAIL: wrong artifact installed"; exit 1; }
+[ ! -e "$data_root" ] && [ ! -e "$home_dir/.local/bin/hyperagent" ] || { echo "RED FAIL: wrong artifact installed"; exit 1; }
 echo "RED PASS: wrong OS or architecture artifact refused"
 fresh_home
 valid_release
@@ -71,7 +72,7 @@ echo "RED PASS: occupied port fails visibly without fallback"
 fresh_home
 valid_release
 install_valid "$work/valid.log"
-manifest="$XDG_DATA_HOME/hyperagent/.orch/install-manifest.json"
+manifest="$data_root/.orch/install-manifest.json"
 parent=$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1]))["ORCH_PARENT"])' "$manifest")
 rm -rf "$parent"
 if hyperagent doctor > "$work/missing-parent.log" 2>&1; then
@@ -83,7 +84,7 @@ echo "RED PASS: missing project parent fails doctor"
 fresh_home
 valid_release
 install_valid "$work/valid-resource.log"
-rm -f "$XDG_DATA_HOME/hyperagent/current/.mcp.json"
+rm -f "$data_root/current/.mcp.json"
 if hyperagent doctor > "$work/missing-resource.log" 2>&1; then
   echo "RED FAIL: missing resource was accepted" >&2
   exit 1

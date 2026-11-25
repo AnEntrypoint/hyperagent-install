@@ -78,3 +78,9 @@ set_test_path() {
 isolate_setup_env() {
   unset ORCH_HOME ORCH_PARENT ORCH_PORT ORCH_JOURNAL HYPERAGENT_ROOT CCBRIDGE_TEMPLATES MCP_TIMEOUT MCP_TOOL_TIMEOUT HYPERAGENT_REQUIRE_DEFAULT_PORT || true
 }
+data_home() {
+  case "$(uname -s)" in
+    Darwin) echo "$HOME/Library/Application Support" ;;
+    *) echo "${XDG_DATA_HOME:-$HOME/.local/share}" ;;
+  esac
+}

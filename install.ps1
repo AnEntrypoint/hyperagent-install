@@ -57,10 +57,10 @@ try {
 
     if (Test-Path $currentLink) {
         $previous = (Get-Item -LiteralPath $currentLink).Target
-        Remove-Item -LiteralPath $currentLink -Force -Recurse
+        Remove-Item -LiteralPath $currentLink -Force
     }
     $newLink = Join-Path $installRoot 'current.new'
-    if (Test-Path $newLink) { Remove-Item -LiteralPath $newLink -Force -Recurse }
+    if (Test-Path $newLink) { Remove-Item -LiteralPath $newLink -Force }
     New-Item -ItemType Junction -Path $newLink -Target $versionDir | Out-Null
     Rename-Item -LiteralPath $newLink -NewName 'current'
 
@@ -110,8 +110,8 @@ try {
 finally {
     if (-not $committed) {
         $newLink = Join-Path $installRoot 'current.new'
-        if (Test-Path $newLink) { Remove-Item -LiteralPath $newLink -Force -Recurse -ErrorAction SilentlyContinue }
-        if (Test-Path $currentLink) { Remove-Item -LiteralPath $currentLink -Force -Recurse -ErrorAction SilentlyContinue }
+        if (Test-Path $newLink) { Remove-Item -LiteralPath $newLink -Force -ErrorAction SilentlyContinue }
+        if (Test-Path $currentLink) { Remove-Item -LiteralPath $currentLink -Force -ErrorAction SilentlyContinue }
         if ($previous) { New-Item -ItemType Junction -Path $currentLink -Target $previous -ErrorAction SilentlyContinue | Out-Null }
         if ($versionDir -and (Test-Path $versionDir)) { Remove-Item -LiteralPath $versionDir -Recurse -Force -ErrorAction SilentlyContinue }
     }

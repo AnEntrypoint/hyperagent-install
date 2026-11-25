@@ -1,5 +1,5 @@
-$ErrorActionPreference = 'Stop'
 param([string]$ReleaseDir, [string]$Version, [string]$Target = '')
+$ErrorActionPreference = 'Stop'
 
 if (-not $Target) { $Target = 'x64-windows' }
 $archive = "hyperagent-$Target.zip"

@@ -25,6 +25,7 @@ start_server "$release_dir" "$work/server.log"
 port_holder_pid=$(hold_default_port "$work/holder.log")
 export HOME="$home_dir"
 export XDG_DATA_HOME="$home_dir/.local/share"
+data_root="$(data_home)/hyperagent"
 export PATH="$home_dir/.local/bin:$PATH"
 export HYPERAGENT_RELEASE_BASE="http://127.0.0.1:$server_port"
 export HYPERAGENT_EXPECTED_VERSION="$expected_version"
@@ -35,8 +36,8 @@ grep -q "DOCTOR PASS" "$work/install1.log" || { echo "FAIL: doctor report missin
 grep -q "Restart Claude Code" "$work/install1.log" || { echo "FAIL: restart note missing"; cat "$work/install1.log"; exit 1; }
 [ "$(hyperagent --version)" = "$expected_version" ] || { echo "FAIL: version after install"; exit 1; }
 [ -L "$home_dir/.local/bin/hyperagent" ] || { echo "FAIL: link missing"; exit 1; }
-manifest="$XDG_DATA_HOME/hyperagent/.orch/install-manifest.json"
-env_file="$XDG_DATA_HOME/hyperagent/.orch/install-manifest.env"
+manifest="$data_root/.orch/install-manifest.json"
+env_file="$data_root/.orch/install-manifest.env"
 port=$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1]))["ORCH_PORT"])' "$manifest")
 parent=$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1]))["ORCH_PARENT"])' "$manifest")
 [ "$port" != "8787" ] || { echo "FAIL: no port fallback"; exit 1; }
@@ -49,12 +50,12 @@ port_holder_pid=""
 HYPERAGENT_SOURCE_SHA="$source_sha" "$tools_dir/fake-release.sh" "$release_dir" 2.0.0 > /dev/null
 HYPERAGENT_EXPECTED_VERSION=2.0.0 sh "$tools_dir/../install.sh" > "$work/install2.log" 2>&1
 [ "$(hyperagent --version)" = "2.0.0" ] || { echo "FAIL: version after update"; exit 1; }
-version_count=$(ls "$XDG_DATA_HOME/hyperagent/versions" | wc -l | tr -d ' ')
+version_count=$(ls "$data_root/versions" | wc -l | tr -d ' ')
 [ "$version_count" -eq 2 ] || { echo "FAIL: previous version not kept"; exit 1; }
 HYPERAGENT_SOURCE_SHA="$source_sha" "$tools_dir/fake-release.sh" "$release_dir" 3.0.0 > /dev/null
 HYPERAGENT_EXPECTED_VERSION=3.0.0 sh "$tools_dir/../install.sh" > "$work/install3.log" 2>&1
 [ "$(hyperagent --version)" = "3.0.0" ] || { echo "FAIL: version after prune"; exit 1; }
-version_count=$(ls "$XDG_DATA_HOME/hyperagent/versions" | wc -l | tr -d ' ')
+version_count=$(ls "$data_root/versions" | wc -l | tr -d ' ')
 [ "$version_count" -eq 2 ] || { echo "FAIL: older versions not pruned"; exit 1; }
 HYPERAGENT_SOURCE_SHA="$source_sha" "$tools_dir/fake-release.sh" "$release_dir" "$expected_version" > /dev/null
 rm -rf "$home_dir"
