@@ -71,7 +71,8 @@ register_mcp() {
     [ -n "$key" ] || continue
     set -- "$@" -e "$key=$value"
   done < "$env_path"
-  "$@" hyperagent -- "$bin_dir/hyperagent" mcp
+  set -- "$@" -- hyperagent "$bin_dir/hyperagent" mcp
+  "$@"
 }
 
 run_setup() {

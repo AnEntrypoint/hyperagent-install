@@ -63,7 +63,7 @@ function Register-Mcp {
         $value = $line.Substring($separator + 1)
         $arguments += @('-e', "$key=$value")
     }
-    $arguments += @('hyperagent', '--', (Join-Path $binDir 'hyperagent.cmd'), 'mcp')
+    $arguments += @('--', 'hyperagent', (Join-Path $binDir 'hyperagent.cmd'), 'mcp')
     & $claude.Source @arguments
     if ($LASTEXITCODE -ne 0) { Write-Host "setup: claude mcp add failed with exit code $LASTEXITCODE"; exit 1 }
 }
