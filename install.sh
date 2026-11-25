@@ -98,7 +98,7 @@ mkdir -p "$scratch/unpacked"
 tar -xzf "$scratch/$archive" -C "$scratch/unpacked"
 unpacked_dir="$scratch/unpacked/hyperagent-$target"
 [ -x "$unpacked_dir/bin/hyperagent" ] || fail "the archive has no bin/hyperagent"
-for resource in bin/ccbridge share/ccbridge/templates share/ccbridge/web share/hyperagent/gui/public .mcp.json share/hyperagent/scripts share/hyperagent/docs; do
+for resource in bin/ccbridge share/ccbridge/templates share/ccbridge/web share/hyperagent/gui/public .mcp.json scripts docs tools; do
   [ -e "$unpacked_dir/$resource" ] || fail "the archive has no $resource"
 done
 

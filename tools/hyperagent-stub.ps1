@@ -105,7 +105,7 @@ function Run-Doctor {
     $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
     $port = [int]$manifest.ORCH_PORT
     if (-not (Test-PortFree $port)) { Write-Host "doctor: port $port is occupied"; exit 1 }
-    foreach ($resource in @('bin\ccbridge.cmd', 'share\ccbridge\templates', 'share\ccbridge\web', 'share\hyperagent\gui\public', '.mcp.json', 'share\hyperagent\scripts', 'share\hyperagent\docs', 'share\hyperagent\tools\mcp-stub.js')) {
+    foreach ($resource in @('bin\ccbridge.cmd', 'share\ccbridge\templates', 'share\ccbridge\web', 'share\hyperagent\gui\public', '.mcp.json', 'scripts', 'docs', 'tools', 'share\hyperagent\tools\mcp-stub.js')) {
         if (-not (Test-Path (Join-Path $prefix $resource))) { Write-Host "doctor: missing $resource"; exit 1 }
     }
     $templateFile = Join-Path $templates 'claude.json'

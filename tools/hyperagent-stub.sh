@@ -110,7 +110,7 @@ run_doctor() {
   [ -f "$env_path" ] || { echo "doctor: install manifest env missing" >&2; exit 1; }
   port=$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1]))["ORCH_PORT"])' "$manifest_path")
   check_port "$port" || { echo "doctor: port $port is occupied" >&2; exit 1; }
-  for resource in bin/ccbridge share/ccbridge/templates share/ccbridge/web share/hyperagent/gui/public .mcp.json share/hyperagent/scripts share/hyperagent/docs share/hyperagent/tools/mcp-stub.js; do
+  for resource in bin/ccbridge share/ccbridge/templates share/ccbridge/web share/hyperagent/gui/public .mcp.json scripts docs tools share/hyperagent/tools/mcp-stub.js; do
     [ -e "$prefix/$resource" ] || { echo "doctor: missing $resource" >&2; exit 1; }
   done
   template_file="$templates/claude.json"

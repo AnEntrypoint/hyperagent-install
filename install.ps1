@@ -54,7 +54,7 @@ try {
     if (-not (Test-Path $exeSource)) { Fail 'the archive has no bin\hyperagent.exe or bin\hyperagent.cmd' }
     $ccbridgeCandidates = @('bin\ccbridge.exe', 'bin\ccbridge.cmd')
     if (-not ($ccbridgeCandidates | Where-Object { Test-Path (Join-Path $source $_) })) { Fail 'the archive has no bin\ccbridge.exe or bin\ccbridge.cmd' }
-    foreach ($resource in @('share\ccbridge\templates', 'share\ccbridge\web', 'share\hyperagent\gui\public', '.mcp.json', 'share\hyperagent\scripts', 'share\hyperagent\docs')) {
+    foreach ($resource in @('share\ccbridge\templates', 'share\ccbridge\web', 'share\hyperagent\gui\public', '.mcp.json', 'scripts', 'docs', 'tools')) {
         if (-not (Test-Path (Join-Path $source $resource))) { Fail "the archive has no $resource" }
     }
 
