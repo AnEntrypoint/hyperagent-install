@@ -118,7 +118,7 @@ rollback() {
 
 release_base=${HYPERAGENT_RELEASE_BASE:-https://github.com/AnEntrypoint/hyperagent/releases/download/latest}
 expected_version=${HYPERAGENT_EXPECTED_VERSION:-}
-expected_source_sha=${HYPERAGENT_EXPECTED_SOURCE_SHA:-${HYPERAGENT_SOURCE_SHA:-b79a2428a122db7087dd660df55b7fca64922cc1}}
+expected_source_sha=${HYPERAGENT_EXPECTED_SOURCE_SHA:-${HYPERAGENT_SOURCE_SHA:-132d50d1dd9e9a0bc79f814af22e6c44f74c23db}}
 templates_dir=${HYPERAGENT_TEMPLATES:-}
 target=$(detect_target)
 archive="hyperagent-$target.tar.gz"

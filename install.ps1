@@ -43,7 +43,7 @@ function Validate-Release {
 
 $releaseBase = if ($env:HYPERAGENT_RELEASE_BASE) { $env:HYPERAGENT_RELEASE_BASE } else { 'https://github.com/AnEntrypoint/hyperagent/releases/download/latest' }
 $expectedVersion = if ($env:HYPERAGENT_EXPECTED_VERSION) { $env:HYPERAGENT_EXPECTED_VERSION } else { '' }
-$expectedSourceSha = if ($env:HYPERAGENT_EXPECTED_SOURCE_SHA) { $env:HYPERAGENT_EXPECTED_SOURCE_SHA } elseif ($env:HYPERAGENT_SOURCE_SHA) { $env:HYPERAGENT_SOURCE_SHA } else { 'b79a2428a122db7087dd660df55b7fca64922cc1' }
+$expectedSourceSha = if ($env:HYPERAGENT_EXPECTED_SOURCE_SHA) { $env:HYPERAGENT_EXPECTED_SOURCE_SHA } elseif ($env:HYPERAGENT_SOURCE_SHA) { $env:HYPERAGENT_SOURCE_SHA } else { '132d50d1dd9e9a0bc79f814af22e6c44f74c23db' }
 $templatesDir = if ($env:HYPERAGENT_TEMPLATES) { $env:HYPERAGENT_TEMPLATES } else { '' }
 
 if (-not [Environment]::Is64BitOperatingSystem -or $env:PROCESSOR_ARCHITECTURE -ne 'AMD64') {

@@ -33,7 +33,7 @@ Restart Claude Code after installation. An already-running session keeps its old
 |---|---|
 | HYPERAGENT_RELEASE_BASE | Release base URL; use a local fake release for witnesses. |
 | HYPERAGENT_EXPECTED_VERSION | Require hyperagent --version to equal this version. |
-| HYPERAGENT_EXPECTED_SOURCE_SHA | Require manifest.json sha to equal this source commit; defaults to b79a2428a122db7087dd660df55b7fca64922cc1. |
+| HYPERAGENT_EXPECTED_SOURCE_SHA | Require manifest.json sha to equal this source commit; defaults to 132d50d1dd9e9a0bc79f814af22e6c44f74c23db. |
 | HYPERAGENT_TEMPLATES | Harness template directory passed to setup as CCBRIDGE_TEMPLATES. |
 | CCBRIDGE_TEMPLATES | Harness template directory read by setup and doctor. |
 | XDG_DATA_HOME | Linux data home; macOS uses Library/Application Support and Windows uses LOCALAPPDATA. |
