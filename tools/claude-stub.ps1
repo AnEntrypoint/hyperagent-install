@@ -38,5 +38,5 @@ switch ("$commandName $subcommand") {
         Remove-Item -LiteralPath $config -Force -ErrorAction SilentlyContinue
         Write-Host 'Removed MCP server hyperagent from user config'
     }
-    default { throw 'claude stub: unsupported command' }
+    default { Write-Host 'claude stub: unsupported command'; exit 2 }
 }

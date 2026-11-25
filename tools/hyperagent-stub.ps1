@@ -32,7 +32,7 @@ function Test-PortFree([int]$candidate) {
 
 function Get-Port {
     if (Test-PortFree 8787) { return 8787 }
-    if ($env:HYPERAGENT_REQUIRE_DEFAULT_PORT -eq '1') { throw 'hyperagent setup: port 8787 occupied and fallback disabled' }
+    if ($env:HYPERAGENT_REQUIRE_DEFAULT_PORT -eq '1') { Write-Host 'hyperagent setup: port 8787 occupied and fallback disabled'; exit 1 }
     $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
     $listener.Start()
     $port = $listener.LocalEndpoint.Port
@@ -53,7 +53,7 @@ function Write-Manifest([int]$port) {
 
 function Register-Mcp {
     $claude = Get-Command claude -ErrorAction SilentlyContinue
-    if (-not $claude) { throw 'setup: claude CLI not found on PATH' }
+    if (-not $claude) { Write-Host 'setup: claude CLI not found on PATH'; exit 1 }
     & $claude.Source mcp remove hyperagent -s user 2>$null | Out-Null
     $arguments = @('mcp', 'add', '-s', 'user')
     foreach ($line in Get-Content -LiteralPath $envPath) {
@@ -65,7 +65,7 @@ function Register-Mcp {
     }
     $arguments += @('hyperagent', '--', (Join-Path $binDir 'hyperagent.cmd'), 'mcp')
     & $claude.Source @arguments
-    if ($LASTEXITCODE -ne 0) { throw "setup: claude mcp add failed with exit code $LASTEXITCODE" }
+    if ($LASTEXITCODE -ne 0) { Write-Host "setup: claude mcp add failed with exit code $LASTEXITCODE"; exit 1 }
 }
 
 function Run-Setup {
@@ -80,31 +80,31 @@ function Run-Setup {
 }
 
 function Run-Doctor {
-    if (-not (Test-Path $orchHome)) { throw 'doctor: state directory missing' }
-    if (-not (Test-Path $projectParent)) { throw 'doctor: project parent missing' }
-    if (-not (Test-Path $manifestPath)) { throw 'doctor: install manifest missing' }
-    if (-not (Test-Path $envPath)) { throw 'doctor: install manifest env missing' }
+    if (-not (Test-Path $orchHome)) { Write-Host 'doctor: state directory missing'; exit 1 }
+    if (-not (Test-Path $projectParent)) { Write-Host 'doctor: project parent missing'; exit 1 }
+    if (-not (Test-Path $manifestPath)) { Write-Host 'doctor: install manifest missing'; exit 1 }
+    if (-not (Test-Path $envPath)) { Write-Host 'doctor: install manifest env missing'; exit 1 }
     $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
     $port = [int]$manifest.ORCH_PORT
-    if (-not (Test-PortFree $port)) { throw "doctor: port $port is occupied" }
+    if (-not (Test-PortFree $port)) { Write-Host "doctor: port $port is occupied"; exit 1 }
     foreach ($resource in @('bin\ccbridge.cmd', 'share\ccbridge\templates', 'share\ccbridge\web', 'share\hyperagent\gui\public', '.mcp.json', 'share\hyperagent\scripts', 'share\hyperagent\docs', 'share\hyperagent\tools\mcp-stub.js')) {
-        if (-not (Test-Path (Join-Path $prefix $resource))) { throw "doctor: missing $resource" }
+        if (-not (Test-Path (Join-Path $prefix $resource))) { Write-Host "doctor: missing $resource"; exit 1 }
     }
     $templateFile = Join-Path $templates 'claude.json'
     if (Test-Path $templateFile) {
         $template = Get-Content -LiteralPath $templateFile -Raw
-        if ($template -notlike "*$modelFlag*" -or $template -notlike '*default*') { throw 'doctor: template has no model default' }
-        if ($template -match "AIRC_CLAUDE_MODEL|ORCH_CLAUDE_MODEL|ANTHROPIC_MODEL|$modelConflict") { throw 'doctor: conflicting model override' }
+        if ($template -notlike "*$modelFlag*" -or $template -notlike '*default*') { Write-Host 'doctor: template has no model default'; exit 1 }
+        if ($template -match "AIRC_CLAUDE_MODEL|ORCH_CLAUDE_MODEL|ANTHROPIC_MODEL|$modelConflict") { Write-Host 'doctor: conflicting model override'; exit 1 }
     }
     $claude = Get-Command claude -ErrorAction SilentlyContinue
-    if (-not $claude) { throw 'doctor: claude CLI not found on PATH' }
+    if (-not $claude) { Write-Host 'doctor: claude CLI not found on PATH'; exit 1 }
     $mcpGet = (& $claude.Source mcp get hyperagent 2>&1 | Out-String)
     foreach ($line in Get-Content -LiteralPath $envPath) {
         $separator = $line.IndexOf('=')
         if ($separator -lt 1) { continue }
         $key = $line.Substring(0, $separator)
         $value = $line.Substring($separator + 1)
-        if ($mcpGet -notlike "*$key=$value*") { throw "doctor: stale MCP registration for $key" }
+        if ($mcpGet -notlike "*$key=$value*") { Write-Host "doctor: stale MCP registration for $key"; exit 1 }
     }
     Write-Host "doctor: binary $(Join-Path $binDir 'hyperagent.cmd')"
     Write-Host "doctor: version $version"
@@ -132,5 +132,5 @@ switch ($command) {
     'doctor' { Run-Doctor }
     'mcp' { Run-Mcp }
     'ccbridge' { Write-Host (Join-Path $binDir 'ccbridge.cmd') }
-    default { Write-Error "hyperagent stub: unsupported command $command"; exit 2 }
+    default { Write-Host "hyperagent stub: unsupported command $command"; exit 2 }
 }

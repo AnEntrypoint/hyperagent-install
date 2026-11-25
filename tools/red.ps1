@@ -65,7 +65,7 @@ try {
         $code = & $Command
         if ($code -eq 0) { throw "RED FAIL: $Name was accepted" }
         $text = Get-Content -LiteralPath $Log -Raw
-        if ($text -notlike "*$Pattern*") { throw "RED FAIL: $Name lacked $Pattern" }
+        if ($text -notlike "*$Pattern*") { Write-Host $text; throw "RED FAIL: $Name lacked $Pattern" }
         Write-Host "RED PASS: $Name"
     }
     Reset-Home
@@ -100,6 +100,7 @@ try {
     $code = Invoke-DoctorLog $doctorLog
     if ($code -eq 0) { throw 'RED FAIL: missing project parent was accepted' }
     $doctorText = Get-Content -LiteralPath $doctorLog -Raw
+    Write-Host $doctorText
     if ($doctorText -notlike '*project parent missing*') { throw 'RED FAIL: no missing parent message' }
     Write-Host 'RED PASS: missing project parent fails doctor'
     Reset-Home
@@ -111,6 +112,7 @@ try {
     $code = Invoke-DoctorLog $doctorLog
     if ($code -eq 0) { throw 'RED FAIL: missing resource was accepted' }
     $doctorText = Get-Content -LiteralPath $doctorLog -Raw
+    Write-Host $doctorText
     if ($doctorText -notlike '*missing .mcp.json*') { throw 'RED FAIL: no missing resource message' }
     Write-Host 'RED PASS: missing shipped resource fails doctor'
     Reset-Home
@@ -123,6 +125,7 @@ try {
     $code = Invoke-DoctorLog $doctorLog
     if ($code -eq 0) { throw 'RED FAIL: stale MCP registration was accepted' }
     $doctorText = Get-Content -LiteralPath $doctorLog -Raw
+    Write-Host $doctorText
     if ($doctorText -notlike '*stale MCP registration*') { throw 'RED FAIL: no stale MCP message' }
     Write-Host 'RED PASS: stale MCP registration fails doctor'
     Reset-Home
@@ -135,6 +138,7 @@ try {
     $code = Invoke-DoctorLog $doctorLog
     if ($code -eq 0) { throw 'RED FAIL: port collision was accepted' }
     $doctorText = Get-Content -LiteralPath $doctorLog -Raw
+    Write-Host $doctorText
     if ($doctorText -notlike "*port $port is occupied*") { throw 'RED FAIL: no port collision message' }
     if ($holder) { Stop-PidById $holder.Id; $holder = $null }
     Write-Host 'RED PASS: port collision fails doctor'

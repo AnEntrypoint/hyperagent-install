@@ -1,7 +1,8 @@
 $ErrorActionPreference = 'Stop'
 
 function Fail($message) {
-    throw "hyperagent install: $message"
+    Write-Host "hyperagent install: $message"
+    exit 1
 }
 
 function Remove-Junction($path) {
