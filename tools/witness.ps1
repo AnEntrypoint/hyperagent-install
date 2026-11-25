@@ -25,8 +25,12 @@ try {
     $expectedVersion = if ($env:HYPERAGENT_EXPECTED_VERSION) { $env:HYPERAGENT_EXPECTED_VERSION } else { '1.0.0' }
     $sourceSha = if ($env:HYPERAGENT_SOURCE_SHA) { $env:HYPERAGENT_SOURCE_SHA } else { 'witness-sha' }
     $env:HYPERAGENT_SOURCE_SHA = $sourceSha
+    $env:HYPERAGENT_EXPECTED_SOURCE_SHA = $sourceSha
     $fakeRelease = Join-Path $toolsDir 'fake-release.ps1'
     & powershell -NoProfile -ExecutionPolicy Bypass -File $fakeRelease -ReleaseDir $releaseDir -Version $expectedVersion | Out-Null
+    $releaseManifest = Get-Content -LiteralPath (Join-Path $releaseDir 'manifest.json') -Raw | ConvertFrom-Json
+    if (@($releaseManifest.targets.PSObject.Properties.Name).Count -ne 5) { throw 'FAIL: manifest does not have five targets' }
+    if (@(Get-Content -LiteralPath (Join-Path $releaseDir 'SHA256SUMS')).Count -ne 10) { throw 'FAIL: release does not have ten checksum lines' }
     $server = Start-FakeServer -ReleaseDir $releaseDir -Log (Join-Path $work 'server.log') -ToolsDir $toolsDir
     $env:HYPERAGENT_RELEASE_BASE = "http://127.0.0.1:$($server.Port)"
     $env:HYPERAGENT_EXPECTED_VERSION = $expectedVersion

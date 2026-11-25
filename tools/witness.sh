@@ -18,9 +18,14 @@ release_dir="$work/fake-latest"
 template_dir="$work/templates"
 expected_version=${HYPERAGENT_EXPECTED_VERSION:-1.0.0}
 source_sha=${HYPERAGENT_SOURCE_SHA:-witness-sha}
+export HYPERAGENT_EXPECTED_SOURCE_SHA="$source_sha"
 mkdir -p "$home_dir"
 make_template "$template_dir"
 HYPERAGENT_SOURCE_SHA="$source_sha" "$tools_dir/fake-release.sh" "$release_dir" "$expected_version" > /dev/null
+target_count=$(python3 -I -c 'import json,sys; print(len(json.load(open(sys.argv[1]))["targets"]))' "$release_dir/manifest.json")
+[ "$target_count" -eq 5 ] || { echo "FAIL: manifest has $target_count targets"; exit 1; }
+checksum_count=$(wc -l < "$release_dir/SHA256SUMS" | tr -d ' ')
+[ "$checksum_count" -eq 10 ] || { echo "FAIL: $checksum_count checksum lines"; exit 1; }
 start_server "$release_dir" "$work/server.log"
 port_holder_pid=$(hold_default_port "$work/holder.log")
 export HOME="$home_dir"

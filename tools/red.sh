@@ -19,6 +19,7 @@ home_dir="$work/home"
 release_dir="$work/fake-latest"
 template_dir="$work/templates"
 source_sha=${HYPERAGENT_SOURCE_SHA:-witness-sha}
+export HYPERAGENT_EXPECTED_SOURCE_SHA="$source_sha"
 make_template "$template_dir"
 fresh_home() {
   rm -rf "$home_dir"
@@ -128,7 +129,26 @@ if HYPERAGENT_EXPECTED_VERSION=wrong sh "$tools_dir/../install.sh" > "$work/wron
 fi
 grep -q "does not match expected" "$work/wrong-version.log" || { echo "RED FAIL: no version mismatch message"; cat "$work/wrong-version.log"; exit 1; }
 echo "RED PASS: wrong installed version refused"
+fresh_home
+valid_release
+make_partial_release "$release_dir"
+if HYPERAGENT_EXPECTED_VERSION=1.0.0 sh "$tools_dir/../install.sh" > "$work/partial-manifest.log" 2>&1; then
+  echo "RED FAIL: four-target manifest was accepted" >&2
+  exit 1
+fi
+grep -q "partial release" "$work/partial-manifest.log" || { echo "RED FAIL: no partial release message"; cat "$work/partial-manifest.log"; exit 1; }
+[ ! -e "$data_root" ] && [ ! -e "$home_dir/.local/bin/hyperagent" ] || { echo "RED FAIL: partial manifest installed"; exit 1; }
+echo "RED PASS: four-target manifest refused"
+fresh_home
+valid_release
+make_missing_checksum_release "$release_dir"
+if HYPERAGENT_EXPECTED_VERSION=1.0.0 sh "$tools_dir/../install.sh" > "$work/missing-checksum.log" 2>&1; then
+  echo "RED FAIL: missing x64-macos checksum was accepted" >&2
+  exit 1
+fi
+grep -q "missing checksum" "$work/missing-checksum.log" || { echo "RED FAIL: no missing checksum message"; cat "$work/missing-checksum.log"; exit 1; }
+echo "RED PASS: missing x64-macos checksum refused"
 sh "$tools_dir/syntax.sh" > "$work/syntax.log" 2>&1
 grep -q "SYNTAX PASS" "$work/syntax.log" || { echo "RED FAIL: portability syntax check failed"; cat "$work/syntax.log"; exit 1; }
 echo "RED PASS: hardcoded path, model override and token checks"
-echo "RED PASS: bad checksum, wrong artifact, occupied port, missing parent, missing resource, stale MCP, port collision, wrong version and portability"
+echo "RED PASS: bad checksum, wrong artifact, occupied port, missing parent, missing resource, stale MCP, port collision, wrong version, four-target manifest, missing x64-macos checksum and portability"

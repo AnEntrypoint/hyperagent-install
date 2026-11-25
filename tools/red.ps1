@@ -23,6 +23,7 @@ try {
     $envPath = Join-Path $orchHome 'install-manifest.env'
     $sourceSha = if ($env:HYPERAGENT_SOURCE_SHA) { $env:HYPERAGENT_SOURCE_SHA } else { 'witness-sha' }
     $env:HYPERAGENT_SOURCE_SHA = $sourceSha
+    $env:HYPERAGENT_EXPECTED_SOURCE_SHA = $sourceSha
     New-Template $templateDir
     function Reset-Home {
         Clear-SetupEnv
@@ -145,13 +146,22 @@ try {
     Reset-Home
     New-Release '1.0.0'
     Assert-Failure 'wrong installed version refused' (Join-Path $work 'wrong-version.log') 'does not match expected' { Invoke-Install (Join-Path $work 'wrong-version.log') 'wrong' }
+    Reset-Home
+    New-Release '1.0.0'
+    New-PartialRelease $releaseDir
+    Assert-Failure 'four-target manifest refused' (Join-Path $work 'partial-manifest.log') 'partial release' { Invoke-Install (Join-Path $work 'partial-manifest.log') }
+    if (Test-Path $installRoot) { throw 'RED FAIL: partial manifest installed' }
+    Reset-Home
+    New-Release '1.0.0'
+    New-MissingChecksumRelease $releaseDir
+    Assert-Failure 'missing x64-macos checksum refused' (Join-Path $work 'missing-checksum.log') 'missing checksum' { Invoke-Install (Join-Path $work 'missing-checksum.log') }
     $syntaxLog = Join-Path $work 'syntax.log'
     & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $toolsDir 'syntax.ps1') *> $syntaxLog
     if ($LASTEXITCODE -ne 0) { throw 'RED FAIL: syntax witness failed' }
     $syntaxText = Get-Content -LiteralPath $syntaxLog -Raw
     if ($syntaxText -notlike '*POWERSHELL SYNTAX PASS*') { throw 'RED FAIL: no syntax pass' }
     Write-Host 'RED PASS: hardcoded path, model override and token checks'
-    Write-Host 'RED PASS: bad checksum, wrong artifact, occupied port, missing parent, missing resource, stale MCP, port collision, wrong version and portability'
+    Write-Host 'RED PASS: bad checksum, wrong artifact, occupied port, missing parent, missing resource, stale MCP, port collision, wrong version, four-target manifest, missing x64-macos checksum and portability'
 }
 finally {
     if ($server) { Stop-PidById $server.Process.Id }
