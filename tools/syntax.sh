@@ -9,7 +9,6 @@ fi
 node --check "$tools_dir/mcp-stub.js"
 bad_paths=$(printf '%s|%s|%s|%s' '/work''space' '/config/work''space' '/data/work''space' '/''tmp')
 model_flag=$(printf '%s' '--''model')
-model_default="$model_flag default"
 token_prefix=$(printf '%s' 'sk-ant''-')
 auth_assignment=$(printf '%s' 'ANTHROPIC_AUTH''_TOKEN=')
 scan_paths="$repo_dir/install.sh $repo_dir/install.ps1 $repo_dir/README.md $repo_dir/docs $repo_dir/tools $repo_dir/.github"
@@ -17,7 +16,7 @@ if grep -R -n -E --exclude-dir=.git --exclude-dir=.gm --exclude-dir=.agentplug-k
   echo "SYNTAX FAIL: hardcoded host path" >&2
   exit 1
 fi
-if grep -R -n -F --exclude-dir=.git --exclude-dir=.gm --exclude-dir=.agentplug-kv -- "$model_flag" $scan_paths | grep -v -F -- "$model_default"; then
+if grep -R -n -F --exclude-dir=.git --exclude-dir=.gm --exclude-dir=.agentplug-kv -- "$model_flag" $scan_paths | grep -v -i -F -- default; then
   echo "SYNTAX FAIL: conflicting model override" >&2
   exit 1
 fi

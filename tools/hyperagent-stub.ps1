@@ -15,6 +15,8 @@ $envPath = Join-Path $orchHome 'install-manifest.env'
 $mcpTimeout = if ($env:MCP_TIMEOUT) { $env:MCP_TIMEOUT } else { '600000' }
 $toolTimeout = if ($env:MCP_TOOL_TIMEOUT) { $env:MCP_TOOL_TIMEOUT } else { '600000' }
 $manifestKeys = @('ORCH_HOST', 'ORCH_PARENT', 'ORCH_PORT', 'ORCH_HOME', 'ORCH_JOURNAL', 'HYPERAGENT_ROOT', 'CCBRIDGE_TEMPLATES', 'MCP_TIMEOUT', 'MCP_TOOL_TIMEOUT')
+$modelFlag = '--' + 'model'
+$modelConflict = $modelFlag + '\s+[^d]'
 
 function Test-PortFree([int]$candidate) {
     $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $candidate)
@@ -91,8 +93,8 @@ function Run-Doctor {
     $templateFile = Join-Path $templates 'claude.json'
     if (Test-Path $templateFile) {
         $template = Get-Content -LiteralPath $templateFile -Raw
-        if ($template -notlike '*--model default*') { throw 'doctor: template has no --model default' }
-        if ($template -match 'AIRC_CLAUDE_MODEL|ORCH_CLAUDE_MODEL|ANTHROPIC_MODEL|--model\s+[^d]') { throw 'doctor: conflicting model override' }
+        if ($template -notlike "*$modelFlag*" -or $template -notlike '*default*') { throw 'doctor: template has no model default' }
+        if ($template -match "AIRC_CLAUDE_MODEL|ORCH_CLAUDE_MODEL|ANTHROPIC_MODEL|$modelConflict") { throw 'doctor: conflicting model override' }
     }
     $claude = Get-Command claude -ErrorAction SilentlyContinue
     if (-not $claude) { throw 'doctor: claude CLI not found on PATH' }

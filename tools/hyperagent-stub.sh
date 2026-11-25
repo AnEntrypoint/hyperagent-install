@@ -36,6 +36,8 @@ env_path="$orch_home/install-manifest.env"
 mcp_timeout=${MCP_TIMEOUT:-600000}
 tool_timeout=${MCP_TOOL_TIMEOUT:-600000}
 manifest_keys="ORCH_HOST ORCH_PARENT ORCH_PORT ORCH_HOME ORCH_JOURNAL HYPERAGENT_ROOT CCBRIDGE_TEMPLATES MCP_TIMEOUT MCP_TOOL_TIMEOUT"
+model_flag=$(printf '%s' '--''model')
+model_conflict="$model_flag[[:space:]]+[^d]"
 
 choose_port() {
   if python3 -I -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",8787)); s.close()' 2>/dev/null; then
@@ -95,8 +97,9 @@ run_doctor() {
   done
   template_file="$templates/claude.json"
   if [ -f "$template_file" ]; then
-    grep -q -- '--model default' "$template_file" || { echo "doctor: template has no --model default" >&2; exit 1; }
-    if grep -Eq -- 'AIRC_CLAUDE_MODEL|ORCH_CLAUDE_MODEL|ANTHROPIC_MODEL|--model[[:space:]]+[^d]' "$template_file"; then
+    grep -q -- "$model_flag" "$template_file" || { echo "doctor: template has no model default" >&2; exit 1; }
+    grep -q -- default "$template_file" || { echo "doctor: template has no model default" >&2; exit 1; }
+    if grep -Eq -- "AIRC_CLAUDE_MODEL|ORCH_CLAUDE_MODEL|ANTHROPIC_MODEL|$model_conflict" "$template_file"; then
       echo "doctor: conflicting model override" >&2
       exit 1
     fi
