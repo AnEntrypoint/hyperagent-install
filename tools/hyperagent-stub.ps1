@@ -14,7 +14,8 @@ $manifestPath = Join-Path $orchHome 'install-manifest.json'
 $envPath = Join-Path $orchHome 'install-manifest.env'
 $mcpTimeout = if ($env:MCP_TIMEOUT) { $env:MCP_TIMEOUT } else { '600000' }
 $toolTimeout = if ($env:MCP_TOOL_TIMEOUT) { $env:MCP_TOOL_TIMEOUT } else { '600000' }
-$manifestKeys = @('ORCH_HOST', 'ORCH_PARENT', 'ORCH_PORT', 'ORCH_HOME', 'ORCH_JOURNAL', 'HYPERAGENT_ROOT', 'CCBRIDGE_TEMPLATES', 'MCP_TIMEOUT', 'MCP_TOOL_TIMEOUT')
+$manifestKeys = @('ORCH_HOST', 'ORCH_PARENT', 'ORCH_PORT', 'ORCH_HOME', 'ORCH_JOURNAL', 'HYPERAGENT_ROOT', 'CCBRIDGE_BIN', 'CCBRIDGE_TEMPLATES', 'MCP_TIMEOUT', 'MCP_TOOL_TIMEOUT')
+$preferredPort = '8787'
 $modelFlag = '--' + 'model'
 $modelConflict = $modelFlag + '\s+[^d]'
 
@@ -31,7 +32,7 @@ function Test-PortFree([int]$candidate) {
 }
 
 function Get-Port {
-    if (Test-PortFree 8787) { return 8787 }
+    if (Test-PortFree ([int]$script:preferredPort)) { return [int]$script:preferredPort }
     if ($env:HYPERAGENT_REQUIRE_DEFAULT_PORT -eq '1') { Write-Host 'hyperagent setup: port 8787 occupied and fallback disabled'; exit 1 }
     $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
     $listener.Start()
@@ -42,7 +43,7 @@ function Get-Port {
 
 function Write-Manifest([int]$port) {
     New-Item -ItemType Directory -Force -Path $orchHome, $projectParent, $journal | Out-Null
-    $values = @('127.0.0.1', $projectParent, "$port", $orchHome, $journal, $root, $templates, $mcpTimeout, $toolTimeout)
+    $values = @('127.0.0.1', $script:projectParent, "$port", $script:orchHome, $script:journal, $root, (Join-Path $binDir 'ccbridge.cmd'), $script:templates, $mcpTimeout, $toolTimeout)
     $manifest = [ordered]@{}
     for ($i = 0; $i -lt $manifestKeys.Count; $i++) { $manifest[$manifestKeys[$i]] = $values[$i] }
     $manifest | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath $manifestPath -Encoding UTF8
@@ -68,7 +69,24 @@ function Register-Mcp {
     if ($LASTEXITCODE -ne 0) { Write-Host "setup: claude mcp add failed with exit code $LASTEXITCODE"; exit 1 }
 }
 
+function Apply-SetupArgs {
+    param([string[]]$SetupArgs)
+    for ($i = 0; $i -lt $SetupArgs.Count; $i++) {
+        switch ($SetupArgs[$i]) {
+            '--parent' { $script:projectParent = $SetupArgs[$i + 1]; $i++ }
+            '--home' { $script:orchHome = $SetupArgs[$i + 1]; $i++ }
+            '--journal' { $script:journal = $SetupArgs[$i + 1]; $i++ }
+            '--templates' { $script:templates = $SetupArgs[$i + 1]; $i++ }
+            '--port' { $script:preferredPort = $SetupArgs[$i + 1]; $i++ }
+        }
+    }
+    $script:manifestPath = Join-Path $script:orchHome 'install-manifest.json'
+    $script:envPath = Join-Path $script:orchHome 'install-manifest.env'
+}
+
 function Run-Setup {
+    param([string[]]$SetupArgs)
+    Apply-SetupArgs $SetupArgs
     $port = Get-Port
     Write-Manifest $port
     Register-Mcp
@@ -128,7 +146,7 @@ function Run-Mcp {
 $command = if ($args.Count -gt 0) { $args[0] } else { '' }
 switch ($command) {
     '--version' { Write-Host $version }
-    'setup' { if ($args.Count -gt 1 -and $args[1] -eq '--check') { Run-Doctor } else { Run-Setup } }
+    'setup' { if ($args.Count -gt 1 -and $args[1] -eq '--check') { Run-Doctor } elseif ($args.Count -gt 1) { Run-Setup $args[1..($args.Count - 1)] } else { Run-Setup } }
     'doctor' { Run-Doctor }
     'mcp' { Run-Mcp }
     'ccbridge' { Write-Host (Join-Path $binDir 'ccbridge.cmd') }

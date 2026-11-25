@@ -86,8 +86,14 @@ try {
     Write-Host "installed $versionName"
     Write-Host $versionOutput
 
-    if ($templatesDir) { $env:CCBRIDGE_TEMPLATES = $templatesDir }
-    $setupOutput = & $exe setup 2>&1 | Out-String
+    $stateHome = if ($env:HYPERAGENT_HOME) { $env:HYPERAGENT_HOME } else { Join-Path $installRoot '.orch' }
+    $projectParent = if ($env:HYPERAGENT_PARENT) { $env:HYPERAGENT_PARENT } else { Join-Path $installRoot 'projects' }
+    $journal = if ($env:HYPERAGENT_JOURNAL) { $env:HYPERAGENT_JOURNAL } else { Join-Path $stateHome 'projects' }
+    $templates = if ($templatesDir) { $templatesDir } else { Join-Path $currentLink 'share\ccbridge\templates' }
+    $preferredPort = if ($env:HYPERAGENT_PORT) { $env:HYPERAGENT_PORT } else { '8787' }
+    $env:CCBRIDGE_TEMPLATES = $templates
+    $setupArgs = @('setup', '--parent', $projectParent, '--home', $stateHome, '--journal', $journal, '--templates', $templates, '--port', $preferredPort)
+    $setupOutput = & $exe @setupArgs 2>&1 | Out-String
     $setupCode = $LASTEXITCODE
     Write-Host $setupOutput.TrimEnd()
     if ($setupCode -ne 0) { Fail "setup failed with exit code $setupCode" }
