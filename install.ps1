@@ -32,7 +32,7 @@ try {
     $expected = ($entry -split '\s+')[0]
     Invoke-WebRequest -UseBasicParsing -Uri "$releaseBase/$archive" -OutFile (Join-Path $scratch $archive)
     $actual = (Get-FileHash -Algorithm SHA256 (Join-Path $scratch $archive)).Hash.ToLowerInvariant()
-    if ($expected.ToLowerInvariant() -ne $actual) { Fail "sha256 mismatch for $archive: expected $expected, got $actual; nothing was installed" }
+    if ($expected.ToLowerInvariant() -ne $actual) { Fail "sha256 mismatch for ${archive}: expected $expected, got $actual; nothing was installed" }
 
     $unpacked = Join-Path $scratch 'unpacked'
     Expand-Archive -Path (Join-Path $scratch $archive) -DestinationPath $unpacked

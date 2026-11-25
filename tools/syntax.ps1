@@ -4,10 +4,12 @@ $repoDir = Split-Path -Parent $toolsDir
 $scanFiles = Get-ChildItem -LiteralPath $repoDir -Recurse -File | Where-Object { $_.FullName -notmatch '\\\.git\\|\\\.gm\\|\\\.agentplug' }
 $tokens = $null
 $errors = $null
+$parseErrors = @()
 foreach ($file in ($scanFiles | Where-Object { $_.Extension -eq '.ps1' })) {
     [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$tokens, [ref]$errors) | Out-Null
-    if ($errors.Count -gt 0) { throw "POWERSHELL SYNTAX FAIL: $($file.FullName) $($errors[0].Message)" }
+    if ($errors.Count -gt 0) { $parseErrors += "$($file.FullName): $($errors[0].Message)" }
 }
+if ($parseErrors.Count -gt 0) { throw "POWERSHELL SYNTAX FAIL: $($parseErrors -join ' | ')" }
 $badPaths = @('/work' + 'space', '/config/work' + 'space', '/data/work' + 'space', '/' + 'tmp')
 $modelFlag = '--' + 'model'
 $tokenPrefix = 'sk-ant' + '-'
