@@ -3,6 +3,7 @@ $toolsDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoDir = Split-Path -Parent $toolsDir
 . (Join-Path $toolsDir 'common.ps1')
 Set-TestPath $toolsDir
+Clear-SetupEnv
 $work = New-WorkDir
 $server = $null
 $holder = $null

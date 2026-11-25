@@ -87,10 +87,10 @@ trap 'rollback' EXIT
 
 echo "downloading $archive from $release_base"
 download "$release_base/SHA256SUMS" "$scratch/SHA256SUMS"
-download "$release_base/$archive" "$scratch/$archive"
 
 expected=$(awk -v name="$archive" '$2 == name { print $1 }' "$scratch/SHA256SUMS" | head -n 1)
 [ -n "$expected" ] || fail "SHA256SUMS has no entry for $archive"
+download "$release_base/$archive" "$scratch/$archive"
 actual=$(sha256_of "$scratch/$archive")
 [ "$expected" = "$actual" ] || fail "sha256 mismatch for $archive: expected $expected, got $actual; nothing was installed"
 

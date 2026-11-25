@@ -98,3 +98,8 @@ function Start-PortHolder {
     if (-not ((Test-Path $Log) -and ((Get-Content -LiteralPath $Log -Raw) -eq 'ready'))) { throw 'FAIL: port holder did not start' }
     return $process
 }
+function Clear-SetupEnv {
+    foreach ($name in @('ORCH_HOME', 'ORCH_PARENT', 'ORCH_PORT', 'ORCH_JOURNAL', 'HYPERAGENT_ROOT', 'CCBRIDGE_TEMPLATES', 'MCP_TIMEOUT', 'MCP_TOOL_TIMEOUT', 'HYPERAGENT_REQUIRE_DEFAULT_PORT')) {
+        Remove-Item Env:$name -ErrorAction SilentlyContinue
+    }
+}

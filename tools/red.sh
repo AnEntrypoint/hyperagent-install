@@ -3,6 +3,7 @@ set -eu
 tools_dir=$(cd "$(dirname "$0")" && pwd)
 . "$tools_dir/common.sh"
 set_test_path
+isolate_setup_env
 work=$(work_dir)
 server_pid=""
 port_holder_pid=""

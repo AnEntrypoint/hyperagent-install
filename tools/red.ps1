@@ -3,6 +3,7 @@ $toolsDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoDir = Split-Path -Parent $toolsDir
 . (Join-Path $toolsDir 'common.ps1')
 Set-TestPath $toolsDir
+Clear-SetupEnv
 $work = New-WorkDir
 $server = $null
 $holder = $null
@@ -24,6 +25,7 @@ try {
     $env:HYPERAGENT_SOURCE_SHA = $sourceSha
     New-Template $templateDir
     function Reset-Home {
+        Clear-SetupEnv
         Remove-Item -LiteralPath $homeDir -Recurse -Force -ErrorAction SilentlyContinue
         foreach ($directory in @($homeDir, $localAppData, $appData, $tempDir)) { New-Item -ItemType Directory -Force -Path $directory | Out-Null }
         $env:USERPROFILE = $homeDir

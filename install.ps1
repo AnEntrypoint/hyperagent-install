@@ -27,11 +27,10 @@ $pathChanged = $false
 try {
     Write-Host "downloading $archive from $releaseBase"
     Invoke-WebRequest -UseBasicParsing -Uri "$releaseBase/SHA256SUMS" -OutFile (Join-Path $scratch 'SHA256SUMS')
-    Invoke-WebRequest -UseBasicParsing -Uri "$releaseBase/$archive" -OutFile (Join-Path $scratch $archive)
-
     $entry = Get-Content (Join-Path $scratch 'SHA256SUMS') | Where-Object { ($_ -split '\s+')[1] -eq $archive } | Select-Object -First 1
     if (-not $entry) { Fail "SHA256SUMS has no entry for $archive" }
     $expected = ($entry -split '\s+')[0]
+    Invoke-WebRequest -UseBasicParsing -Uri "$releaseBase/$archive" -OutFile (Join-Path $scratch $archive)
     $actual = (Get-FileHash -Algorithm SHA256 (Join-Path $scratch $archive)).Hash.ToLowerInvariant()
     if ($expected.ToLowerInvariant() -ne $actual) { Fail "sha256 mismatch for $archive: expected $expected, got $actual; nothing was installed" }
 
