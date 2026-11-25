@@ -30,6 +30,51 @@ download() {
   fi
 }
 
+scratch_root() {
+  if [ -n "${HYPERAGENT_SCRATCH:-}" ]; then
+    echo "$HYPERAGENT_SCRATCH/hyperagent-install"
+  else
+    echo "${XDG_DATA_HOME:-$HOME/.local/share}/hyperagent-scratch"
+  fi
+}
+
+validate_release() {
+  python3 -I -c '
+import json,sys
+expected_sha = sys.argv[3]
+manifest = json.load(open(sys.argv[1]))
+targets = ["arm64-linux", "arm64-macos", "x64-linux", "x64-macos", "x64-windows"]
+if manifest.get("sha") != expected_sha:
+    sys.exit("partial release: manifest SHA " + str(manifest.get("sha")) + " does not match " + expected_sha)
+manifest_targets = manifest.get("targets", {})
+if sorted(manifest_targets) != targets:
+    sys.exit("partial release: expected five targets, found " + ",".join(sorted(manifest_targets)))
+build = manifest.get("build", "")
+if not build:
+    sys.exit("partial release: manifest has no build")
+stable = []
+versioned = []
+for target in targets:
+    ext = "zip" if target == "x64-windows" else "tar.gz"
+    stable.append("hyperagent-" + target + "." + ext)
+    asset = manifest_targets[target].get("asset", "")
+    if not asset:
+        sys.exit("partial release: missing asset for " + target)
+    versioned.append(asset)
+names = []
+for line in open(sys.argv[2]):
+    parts = line.split()
+    if len(parts) >= 2:
+        names.append(parts[1])
+expected_names = stable + versioned
+missing = [name for name in expected_names if name not in names]
+if missing:
+    sys.exit("partial release: missing checksum for " + missing[0])
+if len(names) != 10 or len(set(names)) != 10:
+    sys.exit("partial release: expected ten checksum lines, found " + str(len(names)))
+' "$scratch/manifest.json" "$scratch/SHA256SUMS" "$expected_source_sha" || fail "partial release rejected"
+}
+
 sha256_of() {
   if command -v sha256sum >/dev/null 2>&1; then
     sha256sum "$1" | cut -d' ' -f1
@@ -73,20 +118,25 @@ rollback() {
 
 release_base=${HYPERAGENT_RELEASE_BASE:-https://github.com/AnEntrypoint/hyperagent/releases/download/latest}
 expected_version=${HYPERAGENT_EXPECTED_VERSION:-}
+expected_source_sha=${HYPERAGENT_EXPECTED_SOURCE_SHA:-${HYPERAGENT_SOURCE_SHA:-b79a2428a122db7087dd660df55b7fca64922cc1}}
 templates_dir=${HYPERAGENT_TEMPLATES:-}
 target=$(detect_target)
 archive="hyperagent-$target.tar.gz"
 install_root="$(data_home)/hyperagent"
 versions_dir="$install_root/versions"
 bin_dir="$HOME/.local/bin"
-scratch=$(mktemp -d)
+scratch_root_dir=$(scratch_root)
+mkdir -p "$scratch_root_dir"
+scratch=$(mktemp -d "$scratch_root_dir/hyperagent-install.XXXXXX")
 version_dir=""
 previous=""
 committed=0
 trap 'rollback' EXIT
 
 echo "downloading $archive from $release_base"
+download "$release_base/manifest.json" "$scratch/manifest.json"
 download "$release_base/SHA256SUMS" "$scratch/SHA256SUMS"
+validate_release
 
 expected=$(awk -v name="$archive" '$2 == name { print $1 }' "$scratch/SHA256SUMS" | head -n 1)
 [ -n "$expected" ] || fail "SHA256SUMS has no entry for $archive"
