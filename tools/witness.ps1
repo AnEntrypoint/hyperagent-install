@@ -77,7 +77,7 @@ try {
     if ($versionCount -ne 2) { throw 'FAIL: older versions not pruned' }
     & powershell -NoProfile -ExecutionPolicy Bypass -File $fakeRelease -ReleaseDir $releaseDir -Version $expectedVersion | Out-Null
     $env:HYPERAGENT_EXPECTED_VERSION = $expectedVersion
-    Remove-Item -LiteralPath $homeDir -Recurse -Force
+    cmd /c rmdir /s /q "$homeDir" 2>$null
     foreach ($directory in @($homeDir, $localAppData, $appData, $tempDir)) { New-Item -ItemType Directory -Force -Path $directory | Out-Null }
     $installClean = Join-Path $work 'install-clean.log'
     & powershell -NoProfile -ExecutionPolicy Bypass -File $installScript *> $installClean
@@ -100,5 +100,5 @@ try {
 finally {
     if ($server) { Stop-PidById $server.Process.Id }
     if ($holder) { Stop-PidById $holder.Id }
-    Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue
+    cmd /c rmdir /s /q "$work" 2>$null
 }

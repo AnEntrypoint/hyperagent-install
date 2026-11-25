@@ -26,7 +26,7 @@ try {
     New-Template $templateDir
     function Reset-Home {
         Clear-SetupEnv
-        Remove-Item -LiteralPath $homeDir -Recurse -Force -ErrorAction SilentlyContinue
+        cmd /c rmdir /s /q "$homeDir" 2>$null
         foreach ($directory in @($homeDir, $localAppData, $appData, $tempDir)) { New-Item -ItemType Directory -Force -Path $directory | Out-Null }
         $env:USERPROFILE = $homeDir
         $env:HOME = $homeDir
@@ -139,5 +139,5 @@ try {
 finally {
     if ($server) { Stop-PidById $server.Process.Id }
     if ($holder) { Stop-PidById $holder.Id }
-    Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue
+    cmd /c rmdir /s /q "$work" 2>$null
 }

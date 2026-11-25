@@ -1,7 +1,7 @@
 function New-WorkDir {
     if ($env:HYPERAGENT_WITNESS_DIR) {
         $work = $env:HYPERAGENT_WITNESS_DIR
-        if (Test-Path $work) { Remove-Item -LiteralPath $work -Recurse -Force }
+        if (Test-Path $work) { cmd /c rmdir /s /q "$work" 2>$null }
     } else {
         $work = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName())
     }

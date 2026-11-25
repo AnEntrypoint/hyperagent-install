@@ -4,6 +4,13 @@ function Fail($message) {
     throw "hyperagent install: $message"
 }
 
+function Remove-Junction($path) {
+    if (Test-Path -LiteralPath $path) {
+        cmd /c rmdir "$path"
+        if ($LASTEXITCODE -ne 0) { Fail "could not remove junction $path" }
+    }
+}
+
 $releaseBase = if ($env:HYPERAGENT_RELEASE_BASE) { $env:HYPERAGENT_RELEASE_BASE } else { 'https://github.com/AnEntrypoint/hyperagent/releases/download/latest' }
 $expectedVersion = if ($env:HYPERAGENT_EXPECTED_VERSION) { $env:HYPERAGENT_EXPECTED_VERSION } else { '' }
 $templatesDir = if ($env:HYPERAGENT_TEMPLATES) { $env:HYPERAGENT_TEMPLATES } else { '' }
@@ -57,10 +64,10 @@ try {
 
     if (Test-Path $currentLink) {
         $previous = (Get-Item -LiteralPath $currentLink).Target
-        Remove-Item -LiteralPath $currentLink -Force
+        Remove-Junction $currentLink
     }
     $newLink = Join-Path $installRoot 'current.new'
-    if (Test-Path $newLink) { Remove-Item -LiteralPath $newLink -Force }
+    if (Test-Path $newLink) { Remove-Junction $newLink }
     New-Item -ItemType Junction -Path $newLink -Target $versionDir | Out-Null
     Rename-Item -LiteralPath $newLink -NewName 'current'
 
@@ -110,8 +117,8 @@ try {
 finally {
     if (-not $committed) {
         $newLink = Join-Path $installRoot 'current.new'
-        if (Test-Path $newLink) { Remove-Item -LiteralPath $newLink -Force -ErrorAction SilentlyContinue }
-        if (Test-Path $currentLink) { Remove-Item -LiteralPath $currentLink -Force -ErrorAction SilentlyContinue }
+        if (Test-Path $newLink) { Remove-Junction $newLink }
+        if (Test-Path $currentLink) { Remove-Junction $currentLink }
         if ($previous) { New-Item -ItemType Junction -Path $currentLink -Target $previous -ErrorAction SilentlyContinue | Out-Null }
         if ($versionDir -and (Test-Path $versionDir)) { Remove-Item -LiteralPath $versionDir -Recurse -Force -ErrorAction SilentlyContinue }
     }

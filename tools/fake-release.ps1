@@ -32,5 +32,5 @@ try {
     Write-Host $archive
 }
 finally {
-    Remove-Item -LiteralPath $staging -Recurse -Force -ErrorAction SilentlyContinue
+    cmd /c rmdir /s /q "$staging" 2>$null
 }
