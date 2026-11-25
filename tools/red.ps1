@@ -74,12 +74,13 @@ try {
     $server = Start-FakeServer -ReleaseDir $releaseDir -Log (Join-Path $work 'server.log') -ToolsDir $toolsDir
     $env:HYPERAGENT_RELEASE_BASE = "http://127.0.0.1:$($server.Port)"
     $env:HYPERAGENT_TEMPLATES = $templateDir
-    $archive = ((Get-Content -LiteralPath (Join-Path $releaseDir 'SHA256SUMS') -Raw) -split '\s+')[1]
+    $archive = Get-WindowsArchiveName
     $archivePath = Join-Path $releaseDir $archive
+    if (-not (Test-Path -LiteralPath $archivePath -PathType Leaf)) { throw 'RED FAIL: Windows host archive missing' }
     $bytes = [IO.File]::ReadAllBytes($archivePath)
     $bytes[10] = 88
     [IO.File]::WriteAllBytes($archivePath, $bytes)
-    Assert-Failure 'corrupted archive refused' (Join-Path $work 'bad-checksum.log') 'sha256 mismatch' { Invoke-Install (Join-Path $work 'bad-checksum.log') }
+    Assert-Failure 'corrupted Windows host archive refused' (Join-Path $work 'bad-checksum.log') 'sha256 mismatch' { Invoke-Install (Join-Path $work 'bad-checksum.log') }
     if (Test-Path $installRoot) { throw 'RED FAIL: something was installed' }
     Reset-Home
     New-Release '1.0.0' 'arm64-windows'

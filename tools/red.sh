@@ -41,7 +41,8 @@ export HYPERAGENT_RELEASE_BASE="http://127.0.0.1:$server_port"
 export HYPERAGENT_TEMPLATES="$template_dir"
 export TMPDIR="$work"
 fresh_home
-archive=$(awk 'NR==1 { print $2 }' "$release_dir/SHA256SUMS")
+archive=$(host_archive)
+[ -f "$release_dir/$archive" ] || { echo "RED FAIL: host archive missing"; exit 1; }
 printf 'X' | dd of="$release_dir/$archive" bs=1 seek=10 conv=notrunc 2>/dev/null
 if HYPERAGENT_EXPECTED_VERSION=1.0.0 sh "$tools_dir/../install.sh" > "$work/bad-checksum.log" 2>&1; then
   echo "RED FAIL: install.sh accepted a corrupted archive" >&2
@@ -49,7 +50,7 @@ if HYPERAGENT_EXPECTED_VERSION=1.0.0 sh "$tools_dir/../install.sh" > "$work/bad-
 fi
 grep -q "sha256 mismatch" "$work/bad-checksum.log" || { echo "RED FAIL: no mismatch message"; cat "$work/bad-checksum.log"; exit 1; }
 [ ! -e "$data_root" ] && [ ! -e "$home_dir/.local/bin/hyperagent" ] || { echo "RED FAIL: something was installed"; exit 1; }
-echo "RED PASS: corrupted archive refused and nothing installed"
+echo "RED PASS: corrupted host archive refused and nothing installed"
 fresh_home
 HYPERAGENT_SOURCE_SHA="$source_sha" "$tools_dir/fake-release.sh" "$release_dir" 1.0.0 arm64-windows > /dev/null
 if HYPERAGENT_EXPECTED_VERSION=1.0.0 sh "$tools_dir/../install.sh" > "$work/wrong-target.log" 2>&1; then

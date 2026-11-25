@@ -116,3 +116,15 @@ for line in open(release_dir + "/SHA256SUMS"):
 open(release_dir + "/SHA256SUMS", "w").write("\n".join(lines) + "\n")
 ' "$1"
 }
+
+host_archive() {
+  case "$(uname -s)" in
+    Darwin) system=macos ;;
+    *) system=linux ;;
+  esac
+  case "$(uname -m)" in
+    x86_64 | amd64) machine=x64 ;;
+    *) machine=arm64 ;;
+  esac
+  echo "hyperagent-$machine-$system.tar.gz"
+}

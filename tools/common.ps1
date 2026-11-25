@@ -129,3 +129,7 @@ function New-MissingChecksumRelease {
     }
     [IO.File]::WriteAllText((Join-Path $ReleaseDir 'SHA256SUMS'), ($lines -join [Environment]::NewLine) + [Environment]::NewLine)
 }
+
+function Get-WindowsArchiveName {
+    return 'hyperagent-x64-windows.zip'
+}
