@@ -8,3 +8,4 @@
 | POSIX tools | tools/witness.sh | tools/red.sh |
 | PowerShell tools | tools/witness.ps1 | tools/red.ps1 |
 | CI matrix | hosted install-witness run | tools/red.sh |
+| release manifest validation | tools/witness.sh, tools/witness.ps1 | tools/red.sh, tools/red.ps1 |

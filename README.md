@@ -19,7 +19,7 @@ irm https://raw.githubusercontent.com/AnEntrypoint/hyperagent-install/main/insta
 ## What it does
 
 1. Selects the artifact for the host: x64-linux, arm64-linux, x64-macos, arm64-macos or x64-windows. A host without a published artifact fails with the reason.
-2. Downloads SHA256SUMS and that archive from https://github.com/AnEntrypoint/hyperagent/releases/download/latest/, refuses a checksum mismatch, and installs nothing when verification fails.
+2. Downloads manifest.json and SHA256SUMS from https://github.com/AnEntrypoint/hyperagent/releases/download/latest/, requires the expected source SHA, all five target names and checksum coverage for all five stable and five versioned assets, refuses a partial release or checksum mismatch, and installs nothing when verification fails.
 3. Checks the shipped layout: bin/hyperagent, bin/ccbridge, share/ccbridge/templates, share/ccbridge/web, share/hyperagent/gui/public, scripts, docs and .mcp.json.
 4. Installs a versioned directory under the user data directory and points current at it. The previous version stays as a fallback. The user PATH gains the bin directory.
 5. Runs hyperagent setup, which creates the project parent, chooses a free loopback port, persists the full MCP environment in a user-scope install manifest, registers the MCP server with those variables, and writes or verifies .mcp.json.
@@ -33,6 +33,7 @@ Restart Claude Code after installation. An already-running session keeps its old
 |---|---|
 | HYPERAGENT_RELEASE_BASE | Release base URL; use a local fake release for witnesses. |
 | HYPERAGENT_EXPECTED_VERSION | Require hyperagent --version to equal this version. |
+| HYPERAGENT_EXPECTED_SOURCE_SHA | Require manifest.json sha to equal this source commit; defaults to b79a2428a122db7087dd660df55b7fca64922cc1. |
 | HYPERAGENT_TEMPLATES | Harness template directory passed to setup as CCBRIDGE_TEMPLATES. |
 | CCBRIDGE_TEMPLATES | Harness template directory read by setup and doctor. |
 | XDG_DATA_HOME | Linux data home; macOS uses Library/Application Support and Windows uses LOCALAPPDATA. |
