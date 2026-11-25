@@ -10,4 +10,4 @@
 | CI matrix | hosted install-witness run | tools/red.sh |
 | release manifest validation | tools/witness.sh, tools/witness.ps1 | tools/red.sh, tools/red.ps1 |
 | corrupted host archive witness | tools/red.sh | tools/red.sh |
-| Windows fake-release archive witness | tools/red.ps1 | tools/red.ps1 |
+| Windows fake-release archive witness | tools/red-windows-archive.sh, tools/red.ps1 | tools/red-windows-archive.sh, tools/red.ps1 |
