@@ -5,7 +5,9 @@ if (-not $Target) { $Target = 'x64-windows' }
 $archive = "hyperagent-$Target.zip"
 if (Test-Path $ReleaseDir) { Remove-Item -LiteralPath $ReleaseDir -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $ReleaseDir | Out-Null
-$staging = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName())
+$scratchRoot = if ($env:HYPERAGENT_SCRATCH) { Join-Path $env:HYPERAGENT_SCRATCH 'hyperagent-install' } else { Join-Path $ReleaseDir 'scratch' }
+New-Item -ItemType Directory -Force -Path $scratchRoot | Out-Null
+$staging = Join-Path $scratchRoot ([IO.Path]::GetRandomFileName())
 New-Item -ItemType Directory -Force -Path $staging | Out-Null
 try {
     $layout = Join-Path $staging "hyperagent-$Target"
@@ -29,7 +31,27 @@ try {
     [IO.File]::WriteAllText((Join-Path $layout 'share\ccbridge\templates\claude.json'), '{"default": true, "argv": ["chlaude-peer"], "ready": ["Claude Code"], "busy": ["esc to interrupt"], "transcript": {"kind": "claude-jsonl", "root": "{home}/.claude/projects"}}')
     Compress-Archive -Path $layout -DestinationPath (Join-Path $ReleaseDir $archive)
     $hash = (Get-FileHash -Algorithm SHA256 (Join-Path $ReleaseDir $archive)).Hash.ToLowerInvariant()
-    [IO.File]::WriteAllText((Join-Path $ReleaseDir 'SHA256SUMS'), "$hash  $archive" + [Environment]::NewLine)
+    $targets = @('arm64-linux', 'arm64-macos', 'x64-linux', 'x64-macos', 'x64-windows')
+    $build = "$Version-23"
+    $manifestTargets = [ordered]@{}
+    foreach ($name in $targets) {
+        $ext = if ($name -eq 'x64-windows') { 'zip' } else { 'tar.gz' }
+        $manifestTargets[$name] = [ordered]@{ asset = "hyperagent-$build-$name.$ext"; sha256 = ('0' * 64); size = 1 }
+    }
+    $manifest = [ordered]@{ build = $build; sha = $sourceSha; targets = $manifestTargets }
+    [IO.File]::WriteAllText((Join-Path $ReleaseDir 'manifest.json'), ($manifest | ConvertTo-Json -Depth 5))
+    $lines = @()
+    foreach ($name in $targets) {
+        $ext = if ($name -eq 'x64-windows') { 'zip' } else { 'tar.gz' }
+        $stable = "hyperagent-$name.$ext"
+        $checksum = if ($stable -eq $archive) { $hash } else { '0' * 64 }
+        $lines += "$checksum  $stable"
+    }
+    foreach ($name in $targets) {
+        $ext = if ($name -eq 'x64-windows') { 'zip' } else { 'tar.gz' }
+        $lines += ('0' * 64) + "  hyperagent-$build-$name.$ext"
+    }
+    [IO.File]::WriteAllText((Join-Path $ReleaseDir 'SHA256SUMS'), ($lines -join [Environment]::NewLine) + [Environment]::NewLine)
     Write-Host $archive
 }
 finally {
