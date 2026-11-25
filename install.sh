@@ -123,11 +123,15 @@ fi
 printf 'installed %s\n' "$version_name"
 printf '%s\n' "$version_output"
 
-if [ -n "$templates_dir" ]; then
-  CCBRIDGE_TEMPLATES="$templates_dir"
-  export CCBRIDGE_TEMPLATES
-fi
-"$exe" setup
+data_root="$(data_home)/hyperagent"
+state_home=${HYPERAGENT_HOME:-$data_root/.orch}
+project_parent=${HYPERAGENT_PARENT:-$data_root/projects}
+journal=${HYPERAGENT_JOURNAL:-$state_home/projects}
+templates=${HYPERAGENT_TEMPLATES:-$install_root/current/share/ccbridge/templates}
+preferred_port=${HYPERAGENT_PORT:-8787}
+CCBRIDGE_TEMPLATES="$templates"
+export CCBRIDGE_TEMPLATES
+"$exe" setup --parent "$project_parent" --home "$state_home" --journal "$journal" --templates "$templates" --port "$preferred_port"
 
 if "$exe" doctor > "$scratch/doctor.log" 2>&1; then
   cat "$scratch/doctor.log"

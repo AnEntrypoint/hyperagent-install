@@ -35,17 +35,18 @@ manifest_path="$orch_home/install-manifest.json"
 env_path="$orch_home/install-manifest.env"
 mcp_timeout=${MCP_TIMEOUT:-600000}
 tool_timeout=${MCP_TOOL_TIMEOUT:-600000}
-manifest_keys="ORCH_HOST ORCH_PARENT ORCH_PORT ORCH_HOME ORCH_JOURNAL HYPERAGENT_ROOT CCBRIDGE_TEMPLATES MCP_TIMEOUT MCP_TOOL_TIMEOUT"
+manifest_keys="ORCH_HOST ORCH_PARENT ORCH_PORT ORCH_HOME ORCH_JOURNAL HYPERAGENT_ROOT CCBRIDGE_BIN CCBRIDGE_TEMPLATES MCP_TIMEOUT MCP_TOOL_TIMEOUT"
 model_flag=$(printf '%s' '--''model')
 model_conflict="$model_flag[[:space:]]+[^d]"
 
 choose_port() {
-  if python3 -I -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",8787)); s.close()' 2>/dev/null; then
-    echo 8787
+  preferred=${preferred_port:-8787}
+  if python3 -I -c 'import socket,sys; s=socket.socket(); s.bind(("127.0.0.1",int(sys.argv[1]))); s.close()' "$preferred" 2>/dev/null; then
+    echo "$preferred"
     return 0
   fi
   if [ "${HYPERAGENT_REQUIRE_DEFAULT_PORT:-0}" = "1" ]; then
-    echo "hyperagent setup: port 8787 occupied and fallback disabled" >&2
+    echo "hyperagent setup: port $preferred occupied and fallback disabled" >&2
     return 1
   fi
   python3 -I -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1]); s.close()'
@@ -58,8 +59,8 @@ check_port() {
 write_manifest() {
   port=$1
   mkdir -p "$orch_home" "$project_parent" "$journal"
-  python3 -I -c 'import json,sys; keys=sys.argv[1].split(); values=sys.argv[2:]; print(json.dumps(dict(zip(keys,values)), indent=2, sort_keys=True))' "$manifest_keys" "127.0.0.1" "$project_parent" "$port" "$orch_home" "$journal" "$root" "$templates" "$mcp_timeout" "$tool_timeout" > "$manifest_path"
-  python3 -I -c 'import sys; keys=sys.argv[1].split(); values=sys.argv[2:]; print("\n".join(k+"="+v for k,v in zip(keys,values)))' "$manifest_keys" "127.0.0.1" "$project_parent" "$port" "$orch_home" "$journal" "$root" "$templates" "$mcp_timeout" "$tool_timeout" > "$env_path"
+  python3 -I -c 'import json,sys; keys=sys.argv[1].split(); values=sys.argv[2:]; print(json.dumps(dict(zip(keys,values)), indent=2, sort_keys=True))' "$manifest_keys" "127.0.0.1" "$project_parent" "$port" "$orch_home" "$journal" "$root" "$prefix/bin/ccbridge" "$templates" "$mcp_timeout" "$tool_timeout" > "$manifest_path"
+  python3 -I -c 'import sys; keys=sys.argv[1].split(); values=sys.argv[2:]; print("\n".join(k+"="+v for k,v in zip(keys,values)))' "$manifest_keys" "127.0.0.1" "$project_parent" "$port" "$orch_home" "$journal" "$root" "$prefix/bin/ccbridge" "$templates" "$mcp_timeout" "$tool_timeout" > "$env_path"
 }
 
 register_mcp() {
@@ -75,7 +76,23 @@ register_mcp() {
   "$@"
 }
 
+apply_setup_args() {
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --parent) project_parent=$2; shift 2 ;;
+      --home) orch_home=$2; shift 2 ;;
+      --journal) journal=$2; shift 2 ;;
+      --templates) templates=$2; shift 2 ;;
+      --port) preferred_port=$2; shift 2 ;;
+      *) shift ;;
+    esac
+  done
+  manifest_path="$orch_home/install-manifest.json"
+  env_path="$orch_home/install-manifest.env"
+}
+
 run_setup() {
+  apply_setup_args "$@"
   port=$(choose_port)
   write_manifest "$port"
   register_mcp
@@ -136,7 +153,7 @@ run_mcp() {
 case "${1:-}" in
   --version) echo "$version" ;;
   setup)
-    if [ "${2:-}" = "--check" ]; then run_doctor; else run_setup; fi
+    if [ "${2:-}" = "--check" ]; then run_doctor; else shift; run_setup "$@"; fi
     ;;
   doctor) run_doctor ;;
   mcp) run_mcp ;;
