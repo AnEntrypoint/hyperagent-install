@@ -99,7 +99,7 @@ function Start-PortHolder {
     return $process
 }
 function Clear-SetupEnv {
-    foreach ($name in @('ORCH_HOME', 'ORCH_PARENT', 'ORCH_PORT', 'ORCH_JOURNAL', 'HYPERAGENT_ROOT', 'CCBRIDGE_TEMPLATES', 'MCP_TIMEOUT', 'MCP_TOOL_TIMEOUT', 'HYPERAGENT_REQUIRE_DEFAULT_PORT')) {
+    foreach ($name in @('ORCH_HOME', 'ORCH_PARENT', 'ORCH_PORT', 'ORCH_JOURNAL', 'HYPERAGENT_ROOT', 'CCBRIDGE_TEMPLATES', 'MCP_TIMEOUT', 'MCP_TOOL_TIMEOUT', 'HYPERAGENT_REQUIRE_DEFAULT_PORT', 'ORCH_CLAUDE_MODEL', 'AIRC_CLAUDE_MODEL')) {
         Remove-Item Env:$name -ErrorAction SilentlyContinue
     }
 }
