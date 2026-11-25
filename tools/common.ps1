@@ -68,7 +68,7 @@ function Assert-Connected {
 function Set-TestPath {
     param([string]$ToolsDir)
     if ($env:HYPERAGENT_REAL_CLAUDE -ne '1') {
-        $env:PATH = "$ToolsDir;$env:PATH"
+        $env:PATH = (Join-Path $ToolsDir 'claude-bin') + ';' + $env:PATH
     }
 }
 
