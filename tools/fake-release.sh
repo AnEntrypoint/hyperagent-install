@@ -31,5 +31,26 @@ printf '%s\n' 'placeholder' > "$layout/docs/placeholder"
 printf '%s\n' 'placeholder' > "$layout/tools/placeholder"
 printf '%s\n' '{"default": true, "argv": ["chlaude-peer"], "ready": ["Claude Code"], "busy": ["esc to interrupt"], "transcript": {"kind": "claude-jsonl", "root": "{home}/.claude/projects"}}' > "$layout/share/ccbridge/templates/claude.json"
 tar -C "$staging" -czf "$release_dir/$archive" "hyperagent-$target"
-python3 -I -c 'import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest(), sys.argv[2])' "$release_dir/$archive" "$archive" > "$release_dir/SHA256SUMS"
+python3 -I -c '
+import hashlib,json,sys
+release_dir, archive, version, source_sha, target = sys.argv[1:6]
+targets = ["arm64-linux", "arm64-macos", "x64-linux", "x64-macos", "x64-windows"]
+build = version + "-23"
+manifest_targets = {}
+for name in targets:
+    ext = "zip" if name == "x64-windows" else "tar.gz"
+    manifest_targets[name] = {"asset": "hyperagent-" + build + "-" + name + "." + ext, "sha256": "0" * 64, "size": 1}
+manifest = {"build": build, "sha": source_sha, "targets": manifest_targets}
+open(release_dir + "/manifest.json", "w").write(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+actual = hashlib.sha256(open(release_dir + "/" + archive, "rb").read()).hexdigest()
+lines = []
+for name in targets:
+    ext = "zip" if name == "x64-windows" else "tar.gz"
+    stable = "hyperagent-" + name + "." + ext
+    lines.append((actual if stable == archive else "0" * 64) + "  " + stable)
+for name in targets:
+    ext = "zip" if name == "x64-windows" else "tar.gz"
+    lines.append("0" * 64 + "  hyperagent-" + build + "-" + name + "." + ext)
+open(release_dir + "/SHA256SUMS", "w").write("\n".join(lines) + "\n")
+' "$release_dir" "$archive" "$version" "${HYPERAGENT_SOURCE_SHA:-witness-sha}" "$target"
 echo "$archive"
