@@ -83,7 +83,7 @@ try {
     if (Test-Path $installRoot) { throw 'RED FAIL: something was installed' }
     Reset-Home
     New-Release '1.0.0' 'arm64-windows'
-    Assert-Failure 'wrong artifact refused' (Join-Path $work 'wrong-target.log') 'SHA256SUMS has no entry' { Invoke-Install (Join-Path $work 'wrong-target.log') }
+    Assert-Failure 'wrong artifact refused' (Join-Path $work 'wrong-target.log') '404' { Invoke-Install (Join-Path $work 'wrong-target.log') }
     Reset-Home
     New-Release '1.0.0'
     $holder = Start-PortHolder -Port 8787 -Log (Join-Path $work 'holder.log') -ToolsDir $toolsDir

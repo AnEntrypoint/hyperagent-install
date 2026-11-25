@@ -22,9 +22,9 @@ detect_target() {
 
 download() {
   if command -v curl >/dev/null 2>&1; then
-    curl -fsSL -o "$2" "$1"
+    curl -fsSL -o "$2" "$1" || fail "download failed for $1"
   elif command -v wget >/dev/null 2>&1; then
-    wget -q -O "$2" "$1"
+    wget -q -O "$2" "$1" || fail "download failed for $1"
   else
     fail "curl or wget is required"
   fi

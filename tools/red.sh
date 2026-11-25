@@ -56,7 +56,7 @@ if HYPERAGENT_EXPECTED_VERSION=1.0.0 sh "$tools_dir/../install.sh" > "$work/wron
   echo "RED FAIL: install.sh accepted the wrong artifact" >&2
   exit 1
 fi
-grep -q "SHA256SUMS has no entry" "$work/wrong-target.log" || { echo "RED FAIL: no wrong artifact message"; cat "$work/wrong-target.log"; exit 1; }
+grep -q "download failed" "$work/wrong-target.log" || { echo "RED FAIL: no wrong artifact message"; cat "$work/wrong-target.log"; exit 1; }
 [ ! -e "$data_root" ] && [ ! -e "$home_dir/.local/bin/hyperagent" ] || { echo "RED FAIL: wrong artifact installed"; exit 1; }
 echo "RED PASS: wrong OS or architecture artifact refused"
 fresh_home
