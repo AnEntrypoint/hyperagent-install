@@ -12,8 +12,38 @@ function Remove-Junction($path) {
     }
 }
 
+function Validate-Release {
+    param([string]$ManifestPath, [string]$ChecksumPath, [string]$ExpectedSha)
+    $manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
+    if ($manifest.sha -ne $ExpectedSha) { Fail "partial release: manifest SHA $($manifest.sha) does not match $ExpectedSha" }
+    $targets = @('arm64-linux', 'arm64-macos', 'x64-linux', 'x64-macos', 'x64-windows')
+    $manifestTargets = @($manifest.targets.PSObject.Properties.Name | Sort-Object)
+    if (($manifestTargets -join ',') -ne ($targets -join ',')) { Fail "partial release: expected five targets, found $($manifestTargets -join ',')" }
+    if (-not $manifest.build) { Fail 'partial release: manifest has no build' }
+    $stable = @()
+    $versioned = @()
+    foreach ($target in $targets) {
+        $ext = if ($target -eq 'x64-windows') { 'zip' } else { 'tar.gz' }
+        $stable += "hyperagent-$target.$ext"
+        $asset = $manifest.targets.$target.asset
+        if (-not $asset) { Fail "partial release: missing asset for $target" }
+        $versioned += $asset
+    }
+    $names = @()
+    foreach ($line in Get-Content -LiteralPath $ChecksumPath) {
+        $parts = $line -split '\s+'
+        if ($parts.Count -ge 2) { $names += $parts[1] }
+    }
+    $expectedNames = $stable + $versioned
+    foreach ($name in $expectedNames) {
+        if ($names -notcontains $name) { Fail "partial release: missing checksum for $name" }
+    }
+    if ($names.Count -ne 10 -or (@($names | Sort-Object -Unique).Count -ne 10)) { Fail "partial release: expected ten checksum lines, found $($names.Count)" }
+}
+
 $releaseBase = if ($env:HYPERAGENT_RELEASE_BASE) { $env:HYPERAGENT_RELEASE_BASE } else { 'https://github.com/AnEntrypoint/hyperagent/releases/download/latest' }
 $expectedVersion = if ($env:HYPERAGENT_EXPECTED_VERSION) { $env:HYPERAGENT_EXPECTED_VERSION } else { '' }
+$expectedSourceSha = if ($env:HYPERAGENT_EXPECTED_SOURCE_SHA) { $env:HYPERAGENT_EXPECTED_SOURCE_SHA } elseif ($env:HYPERAGENT_SOURCE_SHA) { $env:HYPERAGENT_SOURCE_SHA } else { 'b79a2428a122db7087dd660df55b7fca64922cc1' }
 $templatesDir = if ($env:HYPERAGENT_TEMPLATES) { $env:HYPERAGENT_TEMPLATES } else { '' }
 
 if (-not [Environment]::Is64BitOperatingSystem -or $env:PROCESSOR_ARCHITECTURE -ne 'AMD64') {
@@ -25,7 +55,9 @@ $archive = "hyperagent-$target.zip"
 $installRoot = Join-Path $env:LOCALAPPDATA 'hyperagent'
 $versionsDir = Join-Path $installRoot 'versions'
 $currentLink = Join-Path $installRoot 'current'
-$scratch = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName())
+$scratchRoot = if ($env:HYPERAGENT_SCRATCH) { Join-Path $env:HYPERAGENT_SCRATCH 'hyperagent-install' } else { Join-Path $env:LOCALAPPDATA 'hyperagent-install-scratch' }
+New-Item -ItemType Directory -Force -Path $scratchRoot | Out-Null
+$scratch = Join-Path $scratchRoot ([IO.Path]::GetRandomFileName())
 New-Item -ItemType Directory -Path $scratch | Out-Null
 $versionDir = ''
 $previous = $null
@@ -34,7 +66,9 @@ $pathChanged = $false
 
 try {
     Write-Host "downloading $archive from $releaseBase"
+    Invoke-WebRequest -UseBasicParsing -Uri "$releaseBase/manifest.json" -OutFile (Join-Path $scratch 'manifest.json')
     Invoke-WebRequest -UseBasicParsing -Uri "$releaseBase/SHA256SUMS" -OutFile (Join-Path $scratch 'SHA256SUMS')
+    Validate-Release (Join-Path $scratch 'manifest.json') (Join-Path $scratch 'SHA256SUMS') $expectedSourceSha
     $entry = Get-Content (Join-Path $scratch 'SHA256SUMS') | Where-Object { ($_ -split '\s+')[1] -eq $archive } | Select-Object -First 1
     if (-not $entry) { Fail "SHA256SUMS has no entry for $archive" }
     $expected = ($entry -split '\s+')[0]
