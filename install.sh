@@ -44,7 +44,7 @@ import json,sys
 expected_sha = sys.argv[3]
 manifest = json.load(open(sys.argv[1]))
 targets = ["arm64-linux", "arm64-macos", "x64-linux", "x64-macos", "x64-windows"]
-if manifest.get("sha") != expected_sha:
+if expected_sha and manifest.get("sha") != expected_sha:
     sys.exit("partial release: manifest SHA " + str(manifest.get("sha")) + " does not match " + expected_sha)
 manifest_targets = manifest.get("targets", {})
 if sorted(manifest_targets) != targets:
@@ -118,7 +118,7 @@ rollback() {
 
 release_base=${HYPERAGENT_RELEASE_BASE:-https://github.com/AnEntrypoint/hyperagent/releases/download/latest}
 expected_version=${HYPERAGENT_EXPECTED_VERSION:-}
-expected_source_sha=${HYPERAGENT_EXPECTED_SOURCE_SHA:-${HYPERAGENT_SOURCE_SHA:-132d50d1dd9e9a0bc79f814af22e6c44f74c23db}}
+expected_source_sha=${HYPERAGENT_EXPECTED_SOURCE_SHA:-${HYPERAGENT_SOURCE_SHA:-}}
 templates_dir=${HYPERAGENT_TEMPLATES:-}
 target=$(detect_target)
 archive="hyperagent-$target.tar.gz"
